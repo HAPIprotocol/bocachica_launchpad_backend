@@ -25,5 +25,5 @@ export class Ticket {
 
   @Column('timestamptz')
   @ApiProperty()
-  timestamp: number;
+  timestamp: Date;
 }

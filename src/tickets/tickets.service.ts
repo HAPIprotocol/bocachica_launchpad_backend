@@ -18,7 +18,7 @@ export class TicketsService {
     ticket.message = createTicketDto.message;
     ticket.publicKey = createTicketDto.publicKey;
     ticket.signature = createTicketDto.signature;
-    ticket.timestamp = Date.now();
+    ticket.timestamp = new Date();
 
     return this.ticketRepo.save(ticket);
   }
