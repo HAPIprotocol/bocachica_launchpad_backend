@@ -1,5 +1,10 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
@@ -10,23 +15,24 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Post()
-  @ApiResponse({
-    status: 201,
+  @ApiCreatedResponse({
     description: 'The record has been successfully created.',
+    type: Ticket,
   })
-  @ApiResponse({ status: 401, description: 'Bad request.' })
+  @ApiBadRequestResponse({ status: 401, description: 'Bad request.' })
   create(@Body() createTicketDto: CreateTicketDto): Promise<Ticket> {
     return this.ticketsService.create(createTicketDto);
   }
 
   @Get()
+  @ApiOkResponse({ description: 'Return list of tickets.' })
   findAll(): Promise<{ list: Ticket[] }> {
     return this.ticketsService.findAll();
   }
 
   @Get(':id')
-  @ApiResponse({ status: 200, description: 'Return record data.' })
-  @ApiResponse({ status: 404, description: 'Not found.' })
+  @ApiOkResponse({ description: 'Return record data.', type: Ticket })
+  @ApiNotFoundResponse({ status: 404, description: 'Not found.' })
   findOne(@Param('id') id: string): Promise<Ticket> {
     return this.ticketsService.findOne(+id);
   }

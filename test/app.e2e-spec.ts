@@ -1,11 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers';
+import * as getPort from 'get-port';
 
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let databaseContainer: StartedTestContainer;
+  let databasePort: number;
+
+  beforeAll(async () => {
+    databasePort = await getPort();
+
+    databaseContainer = await new GenericContainer('postgres:13')
+      .withExposedPorts(databasePort)
+      .withTmpFs({ '/var/lib/postgresql/data': 'rw,noexec,nosuid,size=65536k' })
+      .withWaitStrategy(
+        Wait.forLogMessage('database system is ready to accept connections'),
+      )
+      .withEnv('POSTGRES_USER', 'bocachica')
+      .withEnv('POSTGRES_DB', 'bocachica')
+      .withEnv('POSTGRES_PASSWORD', 'bocachica')
+      .start();
+  });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -14,6 +33,13 @@ describe('AppController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+  });
+
+  afterAll(async () => {
+    if (databaseContainer) {
+      await databaseContainer.stop();
+    }
+    await app.close();
   });
 
   it('/ (GET)', () => {

@@ -16,6 +16,7 @@ import { TicketsModule } from './tickets/tickets.module';
       password: 'bocachica',
       database: 'bocachica',
       autoLoadEntities: true,
+      synchronize: true,
     }),
     ThrottlerModule.forRoot({
       ttl: 60,
