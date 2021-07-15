@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
 
 @Injectable()
 export class TicketsService {
-  create(createTicketDto: CreateTicketDto) {
+  constructor(
+    @InjectRepository(Ticket) private ticketRepo: Repository<Ticket>,
+  ) {}
+
+  async create(createTicketDto: CreateTicketDto) {
     const ticket = new Ticket();
 
     ticket.projectId = createTicketDto.projectId;
@@ -14,16 +20,15 @@ export class TicketsService {
     ticket.signature = createTicketDto.signature;
     ticket.timestamp = Date.now();
 
-    // TODO: persist ticket
-
-    return ticket;
+    return this.ticketRepo.save(ticket);
   }
 
-  findAll() {
-    return `This action returns all tickets`;
+  async findAll() {
+    const list = await this.ticketRepo.find();
+    return { list };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ticket`;
+  async findOne(id: number) {
+    return this.ticketRepo.findOne(+id);
   }
 }

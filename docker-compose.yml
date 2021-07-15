@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: "postgres:13-alpine"
+    restart: always
+    environment:
+      POSTGRES_USER: "bocachica"
+      POSTGRES_DB: "bocachica"
+      POSTGRES_PASSWORD: "bocachica"
+    ports:
+      - "5432:5432"
