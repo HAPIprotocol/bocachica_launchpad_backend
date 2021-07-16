@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bs58 from 'bs58';
+import { PublicKey } from '@solana/web3.js';
+import * as nacl from 'tweetnacl';
 
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
@@ -20,6 +23,10 @@ export class TicketsService {
     ticket.signature = createTicketDto.signature;
     ticket.timestamp = new Date();
 
+    if (!this.verifyTicketSignature(ticket)) {
+      throw new BadRequestException(`Invalid signature`);
+    }
+
     return this.ticketRepo.save(ticket);
   }
 
@@ -30,5 +37,12 @@ export class TicketsService {
 
   async findOne(id: number) {
     return this.ticketRepo.findOne(+id);
+  }
+
+  verifyTicketSignature(ticket: Ticket): boolean {
+    const publicKey = new PublicKey(ticket.publicKey);
+    const signature = bs58.decode(ticket.signature);
+    const signData = Buffer.from(ticket.message);
+    return nacl.sign.detached.verify(signData, signature, publicKey.toBuffer());
   }
 }
