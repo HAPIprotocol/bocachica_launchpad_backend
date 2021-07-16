@@ -4,19 +4,26 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import {
+  DB_DATABASE,
+  DB_HOST,
+  DB_PASSWORD,
+  DB_PORT,
+  DB_TYPE,
+  DB_USERNAME,
+} from './config';
 import { TicketsModule } from './tickets/tickets.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'bocachica',
-      password: 'bocachica',
-      database: 'bocachica',
+      type: DB_TYPE,
+      host: DB_HOST,
+      port: DB_PORT,
+      username: DB_USERNAME,
+      password: DB_PASSWORD,
+      database: DB_DATABASE,
       autoLoadEntities: true,
-      synchronize: true,
     }),
     ThrottlerModule.forRoot({
       ttl: 60,
