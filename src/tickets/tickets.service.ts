@@ -7,6 +7,7 @@ import * as nacl from 'tweetnacl';
 
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
+import { DEFAULT_ITEMS_PER_PAGE } from 'src/config';
 
 @Injectable()
 export class TicketsService {
@@ -30,9 +31,13 @@ export class TicketsService {
     return this.ticketRepo.save(ticket);
   }
 
-  async findAll() {
-    const list = await this.ticketRepo.find();
-    return { list };
+  async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
+    const [list, total] = await this.ticketRepo.findAndCount({
+      order: { id: 'ASC' },
+      skip: skip > 0 ? skip : undefined,
+      take,
+    });
+    return { list, total };
   }
 
   async findOne(id: number) {

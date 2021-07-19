@@ -1,5 +1,7 @@
 import { IsInt, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Ticket } from '../entities/ticket.entity';
+import { FindOneDto } from 'src/common/dto/find-one.dto';
 
 export class CreateTicketDto {
   @ApiProperty({ example: 101 })
@@ -20,4 +22,9 @@ export class CreateTicketDto {
   @ApiProperty({ example: 'Join project 101 on bocachica.io' })
   @IsString()
   message: string;
+}
+
+export class CreateTicketResultDto extends FindOneDto<Ticket> {
+  @ApiProperty({ type: Ticket })
+  item: Ticket;
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -7,8 +7,12 @@ import {
 } from '@nestjs/swagger';
 
 import { TicketsService } from './tickets.service';
-import { CreateTicketDto } from './dto/create-ticket.dto';
-import { Ticket } from './entities/ticket.entity';
+import {
+  CreateTicketDto,
+  CreateTicketResultDto,
+} from './dto/create-ticket.dto';
+import { FindAllTicketsResultDto } from './dto/find-all-tickets.dto';
+import { FindOneTicketResultDto } from './dto/find-one-ticket.dto';
 
 @Controller('tickets')
 export class TicketsController {
@@ -16,24 +20,35 @@ export class TicketsController {
 
   @Post()
   @ApiCreatedResponse({
-    description: 'The record has been successfully created.',
-    type: Ticket,
+    description: 'The record has been successfully created',
+    type: CreateTicketResultDto,
   })
-  @ApiBadRequestResponse({ status: 401, description: 'Bad request.' })
-  create(@Body() createTicketDto: CreateTicketDto): Promise<Ticket> {
-    return this.ticketsService.create(createTicketDto);
+  @ApiBadRequestResponse({ description: 'Invalid signature' })
+  async create(
+    @Body() createTicketDto: CreateTicketDto,
+  ): Promise<CreateTicketResultDto> {
+    const item = await this.ticketsService.create(createTicketDto);
+    return { item };
   }
 
   @Get()
-  @ApiOkResponse({ description: 'Return list of tickets.' })
-  findAll(): Promise<{ list: Ticket[] }> {
-    return this.ticketsService.findAll();
+  @ApiOkResponse({
+    description: 'Return list of tickets',
+    type: FindAllTicketsResultDto,
+  })
+  findAll(@Query('skip') skip?: number): Promise<FindAllTicketsResultDto> {
+    if (skip === NaN) skip = undefined;
+    return this.ticketsService.findAll(skip);
   }
 
   @Get(':id')
-  @ApiOkResponse({ description: 'Return record data.', type: Ticket })
-  @ApiNotFoundResponse({ status: 404, description: 'Not found.' })
-  findOne(@Param('id') id: string): Promise<Ticket> {
-    return this.ticketsService.findOne(+id);
+  @ApiOkResponse({
+    description: 'Return record data',
+    type: FindOneTicketResultDto,
+  })
+  @ApiNotFoundResponse({ status: 404, description: 'Not found' })
+  async findOne(@Param('id') id: string): Promise<FindOneTicketResultDto> {
+    const item = await this.ticketsService.findOne(+id);
+    return { item };
   }
 }

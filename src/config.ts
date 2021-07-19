@@ -39,3 +39,9 @@ export const DB_DATABASE = env
   .required(true)
   .default('bocachica')
   .asString();
+
+export const DEFAULT_ITEMS_PER_PAGE = env
+  .get('DEFAULT_ITEMS_PER_PAGE')
+  .required(true)
+  .default('25')
+  .asIntPositive();
