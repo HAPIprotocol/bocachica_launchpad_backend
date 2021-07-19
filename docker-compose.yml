@@ -18,7 +18,7 @@ services:
       POSTGRES_USER: 'bocachica'
       POSTGRES_DB: 'bocachica'
       POSTGRES_PASSWORD: 'bocachica'
-    volumes: 
-      - ./data/pgdata:/var/lib/postgresql/data
+    # volumes: 
+      # - ./data/pgdata:/var/lib/postgresql/data
     ports:
       - '5432:5432'

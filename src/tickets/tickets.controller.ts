@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -36,8 +45,9 @@ export class TicketsController {
     description: 'Return list of tickets',
     type: FindAllTicketsResultDto,
   })
-  findAll(@Query('skip') skip?: number): Promise<FindAllTicketsResultDto> {
-    if (skip === NaN) skip = undefined;
+  findAll(
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip?: number,
+  ): Promise<FindAllTicketsResultDto> {
     return this.ticketsService.findAll(skip);
   }
 

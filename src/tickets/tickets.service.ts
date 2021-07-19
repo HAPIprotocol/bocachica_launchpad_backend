@@ -34,7 +34,7 @@ export class TicketsService {
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
     const [list, total] = await this.ticketRepo.findAndCount({
       order: { id: 'ASC' },
-      skip: skip > 0 ? skip : undefined,
+      skip: skip > 0 ? skip : 0,
       take,
     });
     return { list, total };
