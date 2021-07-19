@@ -10,7 +10,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.use(helmet());
-  app.enableCors({ origin: CORS_ORIGINS });
+  if (CORS_ORIGINS.length) {
+    app.enableCors({ origin: CORS_ORIGINS, credentials: true });
+  }
 
   const config = new DocumentBuilder()
     .setTitle('Boca Chica Backend')
