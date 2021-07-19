@@ -4,12 +4,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { CORS_ORIGINS } from './config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.use(helmet());
-  app.enableCors();
+  app.enableCors({ origin: CORS_ORIGINS });
 
   const config = new DocumentBuilder()
     .setTitle('Boca Chica Backend')

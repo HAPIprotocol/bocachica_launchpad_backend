@@ -45,3 +45,8 @@ export const DEFAULT_ITEMS_PER_PAGE = env
   .required(true)
   .default('25')
   .asIntPositive();
+
+export const CORS_ORIGINS = env
+  .get('CORS_ORIGINS')
+  .default('http://localhost:3000')
+  .asArray();
