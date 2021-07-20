@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bs58 from 'bs58';
@@ -41,7 +45,9 @@ export class TicketsService {
   }
 
   async findOne(id: number) {
-    return this.ticketRepo.findOne(+id);
+    return this.ticketRepo.findOneOrFail(+id).catch(() => {
+      throw new NotFoundException();
+    });
   }
 
   verifyTicketSignature(ticket: Ticket): boolean {

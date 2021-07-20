@@ -1,7 +1,8 @@
 import { IsInt, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
 import { Ticket } from '../entities/ticket.entity';
-import { FindOneDto } from 'src/common/dto/find-one.dto';
+import { FindOneDto } from '../../common/dto/find-one.dto';
 
 export class CreateTicketDto {
   @ApiProperty({ example: 101 })

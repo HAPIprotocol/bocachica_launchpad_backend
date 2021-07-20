@@ -13,6 +13,7 @@ import {
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiTags,
 } from '@nestjs/swagger';
 
 import { TicketsService } from './tickets.service';
@@ -24,6 +25,7 @@ import { FindAllTicketsResultDto } from './dto/find-all-tickets.dto';
 import { FindOneTicketResultDto } from './dto/find-one-ticket.dto';
 
 @Controller('tickets')
+@ApiTags('Tickets')
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 

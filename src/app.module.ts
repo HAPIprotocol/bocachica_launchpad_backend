@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import {
   DB_DATABASE,
   DB_HOST,
@@ -12,6 +10,7 @@ import {
   DB_TYPE,
   DB_USERNAME,
 } from './config';
+import { ProjectsModule } from './projects/projects.module';
 import { TicketsModule } from './tickets/tickets.module';
 
 @Module({
@@ -30,8 +29,7 @@ import { TicketsModule } from './tickets/tickets.module';
       limit: 10,
     }),
     TicketsModule,
+    ProjectsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
