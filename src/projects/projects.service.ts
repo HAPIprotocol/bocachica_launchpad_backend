@@ -28,7 +28,7 @@ export class ProjectsService {
     return this.projectRepo
       .findOneOrFail({
         where: { id },
-        relations: ['rounds'],
+        relations: ['rounds', 'partners'],
       })
       .catch(() => {
         throw new NotFoundException();
