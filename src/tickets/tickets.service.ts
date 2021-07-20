@@ -7,7 +7,7 @@ import * as nacl from 'tweetnacl';
 
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
-import { DEFAULT_ITEMS_PER_PAGE } from 'src/config';
+import { DEFAULT_ITEMS_PER_PAGE } from '../config';
 
 @Injectable()
 export class TicketsService {
