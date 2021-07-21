@@ -2,20 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers';
-import * as getPort from 'get-port';
 
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let databaseContainer: StartedTestContainer;
-  let databasePort: number;
 
   beforeAll(async () => {
-    databasePort = await getPort();
-
     databaseContainer = await new GenericContainer('postgres:13')
-      .withExposedPorts(databasePort)
+      .withExposedPorts(5432)
       .withTmpFs({ '/var/lib/postgresql/data': 'rw,noexec,nosuid,size=65536k' })
       .withWaitStrategy(
         Wait.forLogMessage('database system is ready to accept connections'),

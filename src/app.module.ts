@@ -10,6 +10,7 @@ import {
   DB_TYPE,
   DB_USERNAME,
 } from './config';
+import { AccountsModule } from './accounts/accounts.module';
 import { ProjectsModule } from './projects/projects.module';
 import { TicketsModule } from './tickets/tickets.module';
 
@@ -30,6 +31,7 @@ import { TicketsModule } from './tickets/tickets.module';
     }),
     TicketsModule,
     ProjectsModule,
+    AccountsModule,
   ],
 })
 export class AppModule {}
