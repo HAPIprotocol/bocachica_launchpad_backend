@@ -9,6 +9,8 @@ services:
       DB_USER: 'bocachica'
       DB_PASSWORD: 'bocachica'
       DB_DATABASE: 'bocachica'
+      QUEUE_REDIS_URL:
+      SOLANA_ENDPOINT_URL:
     ports:
       - '3000:3000'
   postgres:
