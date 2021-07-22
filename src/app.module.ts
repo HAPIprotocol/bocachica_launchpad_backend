@@ -14,21 +14,22 @@ import { AccountsModule } from './accounts/accounts.module';
 import { ProjectsModule } from './projects/projects.module';
 import { TicketsModule } from './tickets/tickets.module';
 
+export function DatabaseConfigFactory() {
+  return {
+    type: DB_TYPE,
+    host: DB_HOST,
+    port: DB_PORT,
+    username: DB_USERNAME,
+    password: DB_PASSWORD,
+    database: DB_DATABASE,
+    autoLoadEntities: true,
+  };
+}
+
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: DB_TYPE,
-      host: DB_HOST,
-      port: DB_PORT,
-      username: DB_USERNAME,
-      password: DB_PASSWORD,
-      database: DB_DATABASE,
-      autoLoadEntities: true,
-    }),
-    ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 10,
-    }),
+    TypeOrmModule.forRootAsync({ useFactory: DatabaseConfigFactory }),
+    ThrottlerModule.forRoot({ ttl: 60, limit: 10 }),
     TicketsModule,
     ProjectsModule,
     AccountsModule,

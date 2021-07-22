@@ -37,4 +37,14 @@ export class AccountsService {
       return false;
     }
   }
+
+  async getStakeAccounts(address: string) {
+    address;
+    return [];
+  }
+
+  async getStakeRewards(address: string) {
+    address;
+    return [];
+  }
 }

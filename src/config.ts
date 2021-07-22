@@ -63,3 +63,19 @@ export const SOLANA_ENDPOINT_URL = env
   .get('SOLANA_ENDPOINT_URL')
   .default('https://api.mainnet-beta.solana.com')
   .asString();
+
+export const SOLPOWER_CHECKER_JOB_CONCURRENCY = env
+  .get('SOLPOWER_CHECKER_JOB_CONCURRENCY')
+  .default(10)
+  .asIntPositive();
+
+export const SOLANABEACH_API = env
+  .get('SOLANABEACH_API')
+  .default('https://api.solanabeach.io/v1/')
+  .required()
+  .asString();
+
+export const SOLANABEACH_API_KEY = env
+  .get('SOLANABEACH_API_KEY')
+  .required()
+  .asString();

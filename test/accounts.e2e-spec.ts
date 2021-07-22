@@ -1,15 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
 
 import * as config from '../src/config';
-import * as appModule from './../src/app.module';
 import {
   ContainerHandle,
   createPostgresContainer,
   createRedisContainer,
 } from './util/containers';
+import { AccountsModule } from '../src/accounts/accounts.module';
 
-describe('App (e2e)', () => {
+describe('Accounts', () => {
   let app: INestApplication;
   let redisContainer: ContainerHandle;
   let pgContainer: ContainerHandle;
@@ -21,30 +22,32 @@ describe('App (e2e)', () => {
     ]);
 
     (config as any).QUEUE_REDIS_URL = redisContainer.connectionString();
-    (appModule as any).DatabaseConfigFactory = () => ({
-      type: 'postgres',
-      url: pgContainer.connectionString(),
-      autoLoadEntities: true,
-      synchronize: true,
-    });
+  });
+
+  afterAll(async () => {
+    await Promise.all([redisContainer.stop(), pgContainer.stop()]);
   });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [appModule.AppModule],
+      imports: [pgContainer.module(), AccountsModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
-    await redisContainer.stop();
-    await pgContainer.stop();
   });
 
   it('should be defined', () => {
     expect(app).toBeDefined();
+  });
+
+  it('/accounts/:address/balance (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/accounts/7jkywwRB2TCnXw3FNa2B6KXtRt686gBHB4W6yJQvKVcx/balance')
+      .expect(200)
+      .expect({ balance: 1 });
   });
 });

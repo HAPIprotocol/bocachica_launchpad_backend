@@ -4,42 +4,56 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
 import * as Queue from 'bee-queue';
 import * as BN from 'bn.js';
 
 import {
-  BALANCE_CHECKER_JOB_CONCURRENCY,
   QUEUE_REDIS_URL,
   SOLANA_ENDPOINT_URL,
+  SOLPOWER_CHECKER_JOB_CONCURRENCY,
 } from '../config';
 import { AccountsService } from './accounts.service';
 
-export interface BalanceCheckerJob {
+export interface SolPowerCheckerJob {
   address: string;
 }
 
 @Injectable()
-export class BalanceCheckerService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(BalanceCheckerService.name);
+export class SolPowerCheckerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(SolPowerCheckerService.name);
 
-  public readonly queue: Queue<BalanceCheckerJob>;
+  public readonly queue: Queue<SolPowerCheckerJob>;
   public readonly solana: Connection;
 
   constructor(private readonly accountsService: AccountsService) {
     this.solana = new Connection(SOLANA_ENDPOINT_URL, 'finalized');
 
-    const queue = new Queue(BalanceCheckerService.name, {
+    const queue = new Queue(SolPowerCheckerService.name, {
       redis: QUEUE_REDIS_URL,
     });
 
-    queue.process(BALANCE_CHECKER_JOB_CONCURRENCY, async (job) => {
+    queue.process(SOLPOWER_CHECKER_JOB_CONCURRENCY, async (job) => {
       const address = job.data.address;
-      const lamports = await this.solana.getBalance(new PublicKey(address));
 
-      await this.accountsService.updateBalance(address, lamports);
+      const stakeAccounts = await this.accountsService.getStakeAccounts(
+        address,
+      );
 
-      return new BN(lamports).toString();
+      let lamports = new BN(0);
+
+      for (const stakeAccount of stakeAccounts) {
+        const stakeRewards = await this.accountsService.getStakeRewards(
+          stakeAccount,
+        );
+
+        for (const stakeReward of stakeRewards) {
+          const { reward } = stakeReward;
+          lamports = lamports.add(new BN(reward));
+        }
+      }
+
+      return lamports.toString();
     });
 
     queue.on('ready', () => {
@@ -61,7 +75,7 @@ export class BalanceCheckerService implements OnModuleInit, OnModuleDestroy {
     await this.queue.close();
   }
 
-  async getBalance(address: string): Promise<string> {
+  async getSolPower(address: string): Promise<string> {
     return new Promise(async (resolve, reject) => {
       const job = await this.queue
         .createJob({ address })
@@ -72,7 +86,7 @@ export class BalanceCheckerService implements OnModuleInit, OnModuleDestroy {
 
       job.on('succeeded', (result) => {
         this.logger.verbose(
-          `[Job ${job.id}] Balance of ${address} is ${result}`,
+          `[Job ${job.id}] SolPower of ${address} is ${result}`,
         );
         resolve(result);
       });
