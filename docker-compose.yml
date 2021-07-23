@@ -11,6 +11,9 @@ services:
       DB_DATABASE: 'bocachica'
       QUEUE_REDIS_URL:
       SOLANA_ENDPOINT_URL:
+      CORS_ORIGINS:
+      SOLANABEACH_API_URL:
+      SOLANABEACH_API_KEY:
     ports:
       - '3000:3000'
   postgres:

@@ -1,7 +1,7 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
-import { SOLANABEACH_API_KEY } from '../config';
+import { SOLANABEACH_API_URL, SOLANABEACH_API_KEY } from '../config';
 
 /* 
     API docs:
@@ -9,7 +9,7 @@ import { SOLANABEACH_API_KEY } from '../config';
 */
 
 interface StakeAccount {
-  pubkey: string;
+  pubkey: { address: string };
   lamports: number;
   data: {
     state: number;
@@ -55,10 +55,14 @@ interface StakeAccountReward {
 
 @Injectable()
 export class SolanabeachService {
-  client = axios.create({
-    baseURL: 'https://api.solanabeach.io/v1/',
-    headers: { Authorization: `Bearer ${SOLANABEACH_API_KEY}` },
-  });
+  private client: AxiosInstance;
+
+  constructor() {
+    this.client = axios.create({
+      baseURL: SOLANABEACH_API_URL,
+      headers: { Authorization: `Bearer ${SOLANABEACH_API_KEY}` },
+    });
+  }
 
   async getAccountStakes(
     pubkey: string,
@@ -77,7 +81,7 @@ export class SolanabeachService {
 
   async getStakeRewards(
     pubkey: string,
-    cursor: number, // epoch
+    cursor?: number, // epoch
   ): Promise<StakeAccountReward[]> {
     const result = await this.client.get(`/account/${pubkey}/stake-rewards`, {
       params: { cursor },

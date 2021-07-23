@@ -3,6 +3,7 @@ import {
   CacheTTL,
   Controller,
   Get,
+  NotFoundException,
   Param,
   UseInterceptors,
 } from '@nestjs/common';
@@ -48,7 +49,11 @@ export class AccountsController {
   async getSolPower(
     @Param('address') address: string,
   ): Promise<GetSolPowerDto> {
-    const solPower = await this.solpowerCheckerService.getSolPower(address);
-    return { solPower };
+    try {
+      const solPower = await this.solpowerCheckerService.getSolPower(address);
+      return { solPower };
+    } catch (error) {
+      throw new NotFoundException();
+    }
   }
 }

@@ -66,11 +66,11 @@ export const SOLANA_ENDPOINT_URL = env
 
 export const SOLPOWER_CHECKER_JOB_CONCURRENCY = env
   .get('SOLPOWER_CHECKER_JOB_CONCURRENCY')
-  .default(10)
+  .default(1)
   .asIntPositive();
 
-export const SOLANABEACH_API = env
-  .get('SOLANABEACH_API')
+export const SOLANABEACH_API_URL = env
+  .get('SOLANABEACH_API_URL')
   .default('https://api.solanabeach.io/v1/')
   .required()
   .asString();

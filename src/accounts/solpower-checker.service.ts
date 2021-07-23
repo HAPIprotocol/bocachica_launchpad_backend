@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Connection } from '@solana/web3.js';
 import * as Queue from 'bee-queue';
-import * as BN from 'bn.js';
 
 import {
   QUEUE_REDIS_URL,
@@ -36,24 +35,21 @@ export class SolPowerCheckerService implements OnModuleInit, OnModuleDestroy {
     queue.process(SOLPOWER_CHECKER_JOB_CONCURRENCY, async (job) => {
       const address = job.data.address;
 
-      const stakeAccounts = await this.accountsService.getStakeAccounts(
-        address,
-      );
-
-      let lamports = new BN(0);
-
-      for (const stakeAccount of stakeAccounts) {
-        const stakeRewards = await this.accountsService.getStakeRewards(
-          stakeAccount,
-        );
-
-        for (const stakeReward of stakeRewards) {
-          const { reward } = stakeReward;
-          lamports = lamports.add(new BN(reward));
-        }
+      const isExist = await this.accountsService.checkUserAccount(address);
+      if (!isExist) {
+        job.retries(0);
+        throw new Error(`User address not found`);
       }
 
-      return lamports.toString();
+      try {
+        const { lamports } = await this.accountsService.fetchStakeAccounts(
+          address,
+        );
+
+        return lamports.toString();
+      } catch (error) {
+        throw error;
+      }
     });
 
     queue.on('ready', () => {
@@ -62,6 +58,26 @@ export class SolPowerCheckerService implements OnModuleInit, OnModuleDestroy {
 
     queue.on('error', (err) => {
       this.logger.error(err.message);
+    });
+
+    queue.on('job succeeded', (jobId, result) => {
+      this.logger.debug(`Job succeeded id=${jobId} SolPower=${result}`);
+    });
+
+    queue.on('job retrying', (jobId, error) => {
+      this.logger.debug(
+        `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
+      );
+    });
+
+    queue.on('job failed', (jobId, error) => {
+      this.logger.error(
+        `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
+      );
+    });
+
+    queue.on('job progress', (jobId, progress) => {
+      this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
     });
 
     this.queue = queue;
@@ -79,24 +95,20 @@ export class SolPowerCheckerService implements OnModuleInit, OnModuleDestroy {
     return new Promise(async (resolve, reject) => {
       const job = await this.queue
         .createJob({ address })
-        .timeout(1000)
+        .timeout(60000)
         .retries(3)
         .backoff('exponential', 1000)
         .save();
 
       job.on('succeeded', (result) => {
-        this.logger.verbose(
-          `[Job ${job.id}] SolPower of ${address} is ${result}`,
-        );
         resolve(result);
       });
 
       job.on('failed', (err) => {
-        this.logger.warn(
-          `[Job ${job.id}] Error for ${address} is ${err.message}`,
-        );
         reject(err);
       });
+
+      this.logger.debug(`Job started id=${job.id} address=${job.data.address}`);
     });
   }
 }

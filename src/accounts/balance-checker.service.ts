@@ -50,6 +50,26 @@ export class BalanceCheckerService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(err.message);
     });
 
+    queue.on('job succeeded', (jobId, result) => {
+      this.logger.debug(`Job succeeded id=${jobId} balance=${result}`);
+    });
+
+    queue.on('job retrying', (jobId, error) => {
+      this.logger.debug(
+        `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
+      );
+    });
+
+    queue.on('job failed', (jobId, error) => {
+      this.logger.error(
+        `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
+      );
+    });
+
+    queue.on('job progress', (jobId, progress) => {
+      this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
+    });
+
     this.queue = queue;
   }
 
@@ -71,18 +91,14 @@ export class BalanceCheckerService implements OnModuleInit, OnModuleDestroy {
         .save();
 
       job.on('succeeded', (result) => {
-        this.logger.verbose(
-          `[Job ${job.id}] Balance of ${address} is ${result}`,
-        );
         resolve(result);
       });
 
       job.on('failed', (err) => {
-        this.logger.warn(
-          `[Job ${job.id}] Error for ${address} is ${err.message}`,
-        );
         reject(err);
       });
+
+      this.logger.debug(`Job started id=${job.id} address=${job.data.address}`);
     });
   }
 }
