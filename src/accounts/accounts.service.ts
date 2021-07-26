@@ -17,6 +17,7 @@ const UPDATE_ACCOUNTS_PER_RUN = 10;
 export class AccountsService {
   private readonly logger = new Logger(AccountsService.name);
   private lastEpoch?: number;
+  private isUpdateAccountsWorking = false;
 
   constructor(
     private readonly solanabeachService: SolanabeachService,
@@ -34,6 +35,12 @@ export class AccountsService {
 
   @Cron('* * * * * *')
   async updateAccounts() {
+    if (this.isUpdateAccountsWorking) {
+      return;
+    }
+
+    this.isUpdateAccountsWorking = true;
+
     const accountsToUpdate = await this.userAccountRepo.find({
       where: { isUpdateNeeded: true },
       take: UPDATE_ACCOUNTS_PER_RUN,
@@ -44,11 +51,10 @@ export class AccountsService {
     }
 
     for (const account of accountsToUpdate) {
-      const { lamports } = await this.fetchStakeAccounts(account.publicKey);
-      this.logger.log(
-        `SolPower pubkey=${account.publicKey} SolPower=${lamports}`,
-      );
+      await this.fetchStakeAccounts(account.publicKey);
     }
+
+    this.isUpdateAccountsWorking = false;
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -225,14 +231,40 @@ export class AccountsService {
   private async fetchStakeRewards(stakeAccount: StakeAccount) {
     let total = new BN(0);
     let epoch: number | undefined;
+    const logPrefix = `[fetchStakeRewards;${stakeAccount.publicKey}]`;
+
+    const latestReward = await this.stakeRewardRepo.findOne({
+      where: { stakeAccountId: stakeAccount.id },
+      order: { epoch: 'DESC' },
+    });
+
+    const { sum } = await this.stakeRewardRepo
+      .createQueryBuilder('sr')
+      .select('SUM(sr.amount)', 'sum')
+      .where({ stakeAccountId: stakeAccount.id })
+      .getRawOne();
+
+    if (sum && sum != 0) {
+      this.logger.log(
+        `${logPrefix} Previously saved SolPower=${sum} epoch=${latestReward.epoch}`,
+      );
+      total = total.add(new BN(sum));
+    }
+
+    let hasReachedHistory = false;
     while (true) {
-      const logPrefix = `[fetchStakeRewards;${stakeAccount.publicKey}]`;
+      if (hasReachedHistory) {
+        this.logger.debug(`${logPrefix} Reached known history`);
+        break;
+      }
+
       const rewards = await this.solanabeachService.getStakeRewards(
         stakeAccount.publicKey,
         epoch,
       );
 
       if (rewards.length === 0) {
+        this.logger.debug(`${logPrefix} Exhausted rewards cursor=${epoch}`);
         break;
       }
 
@@ -242,40 +274,27 @@ export class AccountsService {
 
       epoch = rewards[rewards.length - 1].epoch;
 
-      let isDuplicateFound = false;
       for (const reward of rewards) {
-        let stakeReward = await this.stakeRewardRepo.findOne({
-          where: {
-            stakeAccountId: stakeAccount.id,
-            epoch: reward.epoch.toString(),
-          },
-        });
-
-        if (stakeReward) {
-          this.logger.debug(
-            `${logPrefix} Stake duplicate id=${stakeReward.id}`,
-          );
-          total = total.add(new BN(stakeReward.amount));
-          isDuplicateFound = true;
+        if (latestReward && reward.epoch <= Number(latestReward.epoch)) {
+          hasReachedHistory = true;
           break;
         }
 
-        stakeReward = new StakeReward();
+        const stakeReward = new StakeReward();
         stakeReward.amount = reward.amount;
-        total = total.add(new BN(reward.amount));
         stakeReward.epoch = reward.epoch.toString();
         stakeReward.stakeAccountId = stakeAccount.id;
         stakeReward.slot = reward.effectiveSlot.toString();
         const saved = await this.stakeRewardRepo.save(stakeReward);
-        this.logger.verbose(`${logPrefix} Saved id=${saved.id}`);
+        this.logger.verbose(
+          `${logPrefix} Saved id=${saved.id} epoch=${reward.epoch}`,
+        );
+
+        total = total.add(new BN(stakeReward.amount));
 
         if (reward.epoch < epoch) {
           epoch = reward.epoch;
         }
-      }
-
-      if (isDuplicateFound) {
-        break;
       }
     }
 
