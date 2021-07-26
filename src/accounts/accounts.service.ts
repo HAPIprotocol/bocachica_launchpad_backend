@@ -44,7 +44,10 @@ export class AccountsService {
     }
 
     for (const account of accountsToUpdate) {
-      await this.fetchStakeAccounts(account.publicKey);
+      const { lamports } = await this.fetchStakeAccounts(account.publicKey);
+      this.logger.log(
+        `SolPower pubkey=${account.publicKey} SolPower=${lamports}`,
+      );
     }
   }
 
