@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Not, Repository } from 'typeorm';
 import * as BN from 'bn.js';
 
 import { UserAccount } from './entities/user-account.entity';
@@ -10,9 +11,12 @@ import { Validator } from './entities/validator.entity';
 import { WEB3_CONNECTION, Web3Connection } from '../web3/web3.module';
 import { StakeReward } from './entities/stake-rewards.entity';
 
+const UPDATE_ACCOUNTS_PER_RUN = 10;
+
 @Injectable()
 export class AccountsService {
   private readonly logger = new Logger(AccountsService.name);
+  private lastEpoch?: number;
 
   constructor(
     private readonly solanabeachService: SolanabeachService,
@@ -27,6 +31,36 @@ export class AccountsService {
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
   ) {}
+
+  @Cron('* * * * * *')
+  async updateAccounts() {
+    const accountsToUpdate = await this.userAccountRepo.find({
+      where: { isUpdateNeeded: true },
+      take: UPDATE_ACCOUNTS_PER_RUN,
+    });
+
+    if (accountsToUpdate.length) {
+      this.logger.log(`Found ${accountsToUpdate.length} accounts to update`);
+    }
+
+    for (const account of accountsToUpdate) {
+      await this.fetchStakeAccounts(account.publicKey);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async updateEpoch() {
+    const { epoch } = await this.web3.getEpochInfo();
+    if (this.lastEpoch !== epoch) {
+      this.logger.log(`New epoch: ${epoch}`);
+      const { affected } = await this.userAccountRepo.update(
+        { solPowerEpoch: Not(epoch.toString()) },
+        { isUpdateNeeded: true },
+      );
+      this.logger.log(`Accounts to update: ${affected}`);
+      this.lastEpoch = epoch;
+    }
+  }
 
   async updateBalance(address: string, lamports: number): Promise<boolean> {
     try {

@@ -1,7 +1,7 @@
 import { CacheModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Web3Module } from 'src/web3/web3.module';
 
+import { Web3Module } from '../web3/web3.module';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { BalanceCheckerService } from './balance-checker.service';

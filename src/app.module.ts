@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import {
   DB_DATABASE,
@@ -30,6 +31,7 @@ export function DatabaseConfigFactory() {
   imports: [
     TypeOrmModule.forRootAsync({ useFactory: DatabaseConfigFactory }),
     ThrottlerModule.forRoot({ ttl: 60, limit: 10 }),
+    ScheduleModule.forRoot(),
     TicketsModule,
     ProjectsModule,
     AccountsModule,
