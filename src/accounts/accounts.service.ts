@@ -239,6 +239,7 @@ export class AccountsService {
 
       epoch = rewards[rewards.length - 1].epoch;
 
+      let isDuplicateFound = false;
       for (const reward of rewards) {
         let stakeReward = await this.stakeRewardRepo.findOne({
           where: {
@@ -252,7 +253,8 @@ export class AccountsService {
             `${logPrefix} Stake duplicate id=${stakeReward.id}`,
           );
           total = total.add(new BN(stakeReward.amount));
-          continue;
+          isDuplicateFound = true;
+          break;
         }
 
         stakeReward = new StakeReward();
@@ -264,10 +266,13 @@ export class AccountsService {
         const saved = await this.stakeRewardRepo.save(stakeReward);
         this.logger.verbose(`${logPrefix} Saved id=${saved.id}`);
 
-        console.log(`epoch is ${epoch} / ${reward.epoch}`);
         if (reward.epoch < epoch) {
           epoch = reward.epoch;
         }
+      }
+
+      if (isDuplicateFound) {
+        break;
       }
     }
 
