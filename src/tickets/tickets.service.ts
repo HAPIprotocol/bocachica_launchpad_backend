@@ -40,7 +40,7 @@ export class TicketsService {
     ticket.projectId = createTicketDto.projectId;
     ticket.message = createTicketDto.message;
     ticket.publicKey = createTicketDto.publicKey;
-    ticket.signature = createTicketDto.signature;
+    ticket.signature = signature;
     ticket.timestamp = new Date();
 
     const logData = `projectId=${JSON.stringify(
