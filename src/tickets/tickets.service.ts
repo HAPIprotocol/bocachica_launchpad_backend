@@ -23,7 +23,18 @@ export class TicketsService {
   ) {}
 
   async create(createTicketDto: CreateTicketDto) {
-    const ticket = new Ticket();
+    let ticket = await this.ticketRepo.findOne({
+      where: {
+        projectId: createTicketDto.projectId,
+        publicKey: createTicketDto.publicKey,
+      },
+    });
+
+    if (ticket) {
+      return ticket;
+    }
+
+    ticket = new Ticket();
 
     // Expect signature in base58 encoding
     let signature = createTicketDto.signature;

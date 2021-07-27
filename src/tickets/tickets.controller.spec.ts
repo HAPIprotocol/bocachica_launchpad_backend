@@ -28,8 +28,8 @@ describe('TicketsController', () => {
   });
 
   it('should create a ticket', async () => {
-    const saveSpy = jest.spyOn(tableProvider.repo, 'save');
-    saveSpy.mockResolvedValue({ id: 1 } as any);
+    jest.spyOn(tableProvider.repo, 'findOne').mockResolvedValue(undefined);
+    jest.spyOn(tableProvider.repo, 'save').mockResolvedValue({ id: 1 } as any);
 
     const result = await controller.create({
       projectId: 101,
