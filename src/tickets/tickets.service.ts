@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +16,8 @@ import { DEFAULT_ITEMS_PER_PAGE } from '../config';
 
 @Injectable()
 export class TicketsService {
+  private readonly logger = new Logger(TicketsService.name);
+
   constructor(
     @InjectRepository(Ticket) private ticketRepo: Repository<Ticket>,
   ) {}
@@ -40,8 +43,19 @@ export class TicketsService {
     ticket.signature = createTicketDto.signature;
     ticket.timestamp = new Date();
 
+    const logData = `projectId=${JSON.stringify(
+      createTicketDto.projectId,
+    )} message=${JSON.stringify(
+      createTicketDto.message,
+    )} publicKey=${JSON.stringify(
+      createTicketDto.publicKey,
+    )} signature=${JSON.stringify(createTicketDto.signature)}`;
+
     if (!this.verifyTicketSignature(ticket)) {
+      this.logger.warn(`Invalid signature for ticket ${logData}`);
       throw new BadRequestException(`Invalid signature`);
+    } else {
+      this.logger.log(`New ticket created ${logData}`);
     }
 
     return this.ticketRepo.save(ticket);
