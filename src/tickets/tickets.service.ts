@@ -22,6 +22,18 @@ export class TicketsService {
   async create(createTicketDto: CreateTicketDto) {
     const ticket = new Ticket();
 
+    // Expect signature in base58 encoding
+    let signature = createTicketDto.signature;
+
+    try {
+      if (signature.length === 128) {
+        // Convert to base58 if in hex
+        signature = bs58.encode(Buffer.from(signature, 'hex'));
+      }
+    } catch (_) {
+      throw new BadRequestException(`Invalid signature: hex encoding`);
+    }
+
     ticket.projectId = createTicketDto.projectId;
     ticket.message = createTicketDto.message;
     ticket.publicKey = createTicketDto.publicKey;
@@ -51,9 +63,17 @@ export class TicketsService {
   }
 
   verifyTicketSignature(ticket: Ticket): boolean {
-    const publicKey = new PublicKey(ticket.publicKey);
-    const signature = bs58.decode(ticket.signature);
-    const signData = Buffer.from(ticket.message);
-    return nacl.sign.detached.verify(signData, signature, publicKey.toBuffer());
+    try {
+      const publicKey = new PublicKey(ticket.publicKey);
+      const signature = bs58.decode(ticket.signature);
+      const signData = Buffer.from(ticket.message);
+      return nacl.sign.detached.verify(
+        signData,
+        signature,
+        publicKey.toBuffer(),
+      );
+    } catch (_) {
+      return false;
+    }
   }
 }
