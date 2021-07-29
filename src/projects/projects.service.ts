@@ -1,9 +1,8 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import * as BN from 'bn.js';
 
-import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
 import { ProjectContribution } from './entities/project-contribution.entity';
 import { ProjectWithCurrentRound } from './dto/find-all-projects.dto';
@@ -27,8 +26,6 @@ export class ProjectsService {
     @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
     @InjectRepository(ProjectPartner)
     private partnerRepo: Repository<ProjectPartner>,
-    @Inject(WEB3_CONNECTION)
-    private readonly web3: Web3Connection,
     private readonly solanabeach: SolanabeachService,
   ) {}
 
@@ -187,5 +184,11 @@ export class ProjectsService {
     );
 
     return { total: total.toString() };
+  }
+
+  async getActiveRounds() {
+    return this.roundRepo.find({
+      where: { status: ProjectRoundStatus.Active },
+    });
   }
 }

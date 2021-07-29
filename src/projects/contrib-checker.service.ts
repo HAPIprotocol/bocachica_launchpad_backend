@@ -1,14 +1,18 @@
 import {
+  Inject,
   Injectable,
   Logger,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Queue from 'bee-queue';
 
+import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { flobj } from '../common/string';
 import { QUEUE_REDIS_URL } from '../config';
 import { ProjectsService } from './projects.service';
+import { PublicKey } from '@solana/web3.js';
 
 export interface ContribCheckerJob {
   roundId: number;
@@ -20,8 +24,13 @@ const CONTRIB_CHECKER_JOB_CONCURRENCY = 10;
 export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ContribCheckerService.name);
   public readonly queue: Queue<ContribCheckerJob>;
+  private readonly roundSubs: number[] = [];
 
-  constructor(private readonly projectsService: ProjectsService) {
+  constructor(
+    private readonly projectsService: ProjectsService,
+    @Inject(WEB3_CONNECTION)
+    private readonly web3: Web3Connection,
+  ) {
     const queue = new Queue(ContribCheckerService.name, {
       redis: QUEUE_REDIS_URL,
     });
@@ -69,8 +78,42 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
     this.queue = queue;
   }
 
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async checkRoundContributions() {
+    const rounds = await this.projectsService.getActiveRounds();
+    for (const round of rounds) {
+      await this.updateRoundContribution(round.id);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async subscribeForRounds() {
+    for (const subId of this.roundSubs) {
+      await this.web3.removeAccountChangeListener(subId);
+    }
+
+    const rounds = await this.projectsService.getActiveRounds();
+    for (const round of rounds) {
+      const subId = this.web3.onAccountChange(
+        new PublicKey(round.address),
+        () => {
+          this.logger.log(
+            `Round address updated ${flobj({
+              roundId: round.id,
+              address: round.address,
+            })}`,
+          );
+          this.updateRoundContribution(round.id);
+        },
+      );
+      this.roundSubs.push(subId);
+    }
+  }
+
   async onModuleInit() {
     await this.queue.ready();
+    await this.checkRoundContributions();
+    await this.subscribeForRounds();
   }
 
   async onModuleDestroy() {

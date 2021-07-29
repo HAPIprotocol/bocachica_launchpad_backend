@@ -9,6 +9,7 @@ import { Project } from './entities/project.entity';
 import { ProjectPartner } from './entities/project-partner.entity';
 import { ProjectRound } from './entities/project-round.entity';
 import { ProjectContribution } from './entities/project-contribution.entity';
+import { ContribCheckerService } from './contrib-checker.service';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { ProjectContribution } from './entities/project-contribution.entity';
     SolanabeachModule,
   ],
   controllers: [ProjectsController],
-  providers: [ProjectsService],
+  providers: [ProjectsService, ContribCheckerService],
 })
 export class ProjectsModule {}
