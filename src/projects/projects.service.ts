@@ -1,12 +1,16 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
 import { ProjectContribution } from './entities/project-contribution.entity';
+import { ProjectWithCurrentRound } from './dto/find-all-projects.dto';
 import { ProjectPartner } from './entities/project-partner.entity';
-import { ProjectRound } from './entities/project-round.entity';
+import {
+  ProjectRound,
+  ProjectRoundStatus,
+} from './entities/project-round.entity';
 import { Project } from './entities/project.entity';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { flobj } from '../common/string';
@@ -17,6 +21,7 @@ export class ProjectsService {
 
   constructor(
     @InjectRepository(Project) private projectRepo: Repository<Project>,
+<<<<<<< HEAD
     @InjectRepository(ProjectContribution)
     private contribRepo: Repository<ProjectContribution>,
     @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
@@ -25,6 +30,11 @@ export class ProjectsService {
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
     private readonly solanabeach: SolanabeachService,
+=======
+    @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
+    @InjectRepository(ProjectPartner)
+    private partnerRepo: Repository<ProjectPartner>,
+>>>>>>> ac2163a433fff375279b6ef94418be2cb225ad00
   ) {}
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
@@ -33,6 +43,25 @@ export class ProjectsService {
       skip: skip > 0 ? skip : 0,
       take,
     });
+
+    const promises: Promise<void>[] = [];
+    for (const project of list as ProjectWithCurrentRound[]) {
+      promises.push(
+        this.roundRepo
+          .findOne({
+            where: {
+              projectId: project.id,
+              status: Not(ProjectRoundStatus.Finished),
+            },
+            order: { startDate: 'ASC' },
+          })
+          .then((round) => {
+            project.currentRound = round;
+          }),
+      );
+    }
+    await Promise.all(promises);
+
     return { list, total };
   }
 

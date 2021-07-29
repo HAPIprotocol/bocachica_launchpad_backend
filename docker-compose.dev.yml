@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   server:
-    image: 'registry.gitlab.com/hapi_p/bocachica-backend'
+    build: .
     restart: always
     environment:
       DB_HOST: 'postgres'
@@ -15,7 +15,7 @@ services:
       SOLANABEACH_API_URL:
       SOLANABEACH_API_KEY:
     ports:
-      - '127.0.0.1:3000:3000'
+      - '3000:3000'
   postgres:
     image: 'postgres:13-alpine'
     restart: always
@@ -23,12 +23,10 @@ services:
       POSTGRES_USER: 'bocachica'
       POSTGRES_DB: 'bocachica'
       POSTGRES_PASSWORD: 'bocachica'
-    volumes:
-      - ./data/pgdata:/var/lib/postgresql/data
     ports:
-      - '127.0.0.1:5432:5432'
+      - '5432:5432'
   redis:
     image: 'redis:6-alpine'
     restart: always
     ports:
-      - '127.0.0.1:6379:6379'
+      - '6379:6379'
