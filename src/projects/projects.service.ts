@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
+import * as BN from 'bn.js';
 
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
@@ -21,7 +22,6 @@ export class ProjectsService {
 
   constructor(
     @InjectRepository(Project) private projectRepo: Repository<Project>,
-<<<<<<< HEAD
     @InjectRepository(ProjectContribution)
     private contribRepo: Repository<ProjectContribution>,
     @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
@@ -30,11 +30,6 @@ export class ProjectsService {
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
     private readonly solanabeach: SolanabeachService,
-=======
-    @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
-    @InjectRepository(ProjectPartner)
-    private partnerRepo: Repository<ProjectPartner>,
->>>>>>> ac2163a433fff375279b6ef94418be2cb225ad00
   ) {}
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
@@ -66,14 +61,16 @@ export class ProjectsService {
   }
 
   async findOne(id: number) {
-    return this.projectRepo
-      .findOneOrFail({
-        where: { id },
-        relations: ['rounds', 'partners'],
-      })
-      .catch(() => {
-        throw new NotFoundException();
-      });
+    const project = await this.projectRepo.findOne({
+      where: { id },
+      relations: ['rounds', 'partners'],
+    });
+
+    if (!project) {
+      throw new NotFoundException();
+    }
+
+    return project;
   }
 
   async getContrib(publicKey: string, roundId: number) {
@@ -92,7 +89,15 @@ export class ProjectsService {
     });
   }
 
-  async fetchContributions(round: ProjectRound) {
+  async fetchContributions(round: ProjectRound): Promise<{ total: string }> {
+    const { amount } = await this.contribRepo
+      .createQueryBuilder()
+      .select('SUM(amount)', 'amount')
+      .where({ roundId: round.id })
+      .getRawOne();
+
+    let total = new BN(amount);
+
     const latestContrib = await this.contribRepo.findOne({
       where: { roundId: round.id },
       order: { blocknumber: 'DESC' },
@@ -108,9 +113,15 @@ export class ProjectsService {
         offset,
       );
 
+      if (!transfers) {
+        this.logger.error(`Can't fetch transfers for address ${round.address}`);
+        break;
+      }
+
       // Historic data?
       if (
         transfers[0] &&
+        latestContrib &&
         transfers[0].blocknumber >= latestContrib.blocknumber
       ) {
         break;
@@ -124,6 +135,11 @@ export class ProjectsService {
           txHash,
           amount: transfer.amount,
         };
+
+        if (transfer.destination.address !== round.address) {
+          this.logger.debug(`Invalid destination ${flobj(logobj)}`);
+          continue;
+        }
 
         if (!transfer.valid) {
           this.logger.debug(`Invalid contrib ${flobj(logobj)}`);
@@ -147,14 +163,21 @@ export class ProjectsService {
         contrib.txHash = transfer.txhash;
         await this.contribRepo.save(contrib);
         this.logger.log(`Saved contrib ${flobj(logobj)}`);
+        total = total.add(new BN(contrib.amount));
       }
 
       // Last page?
-      if (transfers.length < limit) {
+      if (transfers.length < offset) {
         break;
       }
 
       limit += offset;
     }
+
+    this.logger.log(
+      `Fetched round contributions ${flobj({ total: total.toString() })}`,
+    );
+
+    return { total: total.toString() };
   }
 }

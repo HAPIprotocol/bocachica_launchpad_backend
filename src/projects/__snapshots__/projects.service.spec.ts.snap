@@ -1,0 +1,38 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProjectsService findAll should find all - basic 1`] = `
+Object {
+  "list": Array [
+    Project {
+      "currentRound": ProjectRound {
+        "id": 1,
+        "projectId": 1,
+      },
+      "id": 1,
+      "title": "top project",
+    },
+  ],
+  "total": 1,
+}
+`;
+
+exports[`ProjectsService findAll should find all - empty 1`] = `
+Object {
+  "list": Array [],
+  "total": 0,
+}
+`;
+
+exports[`ProjectsService findOne should find one 1`] = `
+Object {
+  "id": 1,
+}
+`;
+
+exports[`ProjectsService getContrib should get round contribution 1`] = `10`;
+
+exports[`ProjectsService getRoundInfo should get round info 1`] = `
+ProjectRound {
+  "id": 10,
+}
+`;
