@@ -81,29 +81,49 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
   @Cron(CronExpression.EVERY_10_MINUTES)
   async checkRoundContributions() {
     const rounds = await this.projectsService.getActiveRounds();
+    this.logger.log(
+      `Checking round contributions ${flobj({ count: rounds.length })}`,
+    );
     for (const round of rounds) {
+      this.logger.verbose(
+        `Checking round contributions ${flobj({
+          roundId: round.id,
+          address: round.address,
+        })}`,
+      );
       await this.updateRoundContribution(round.id);
     }
   }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async subscribeForRounds() {
+    this.logger.debug(
+      `Cleaning round account subscriptions ${flobj({
+        count: this.roundSubs.length,
+      })}`,
+    );
     for (const subId of this.roundSubs) {
       await this.web3.removeAccountChangeListener(subId);
     }
 
     const rounds = await this.projectsService.getActiveRounds();
     for (const round of rounds) {
+      this.logger.log(
+        `Subscribing to round address updated ${flobj({
+          roundId: round.id,
+          address: round.address,
+        })}`,
+      );
       const subId = this.web3.onAccountChange(
         new PublicKey(round.address),
-        () => {
+        async () => {
           this.logger.log(
             `Round address updated ${flobj({
               roundId: round.id,
               address: round.address,
             })}`,
           );
-          this.updateRoundContribution(round.id);
+          await this.updateRoundContribution(round.id);
         },
       );
       this.roundSubs.push(subId);

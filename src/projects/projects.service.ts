@@ -93,15 +93,34 @@ export class ProjectsService {
       .where({ roundId: round.id })
       .getRawOne();
 
-    let total = new BN(amount);
+    let total = new BN(amount || 0);
+
+    this.logger.verbose(
+      `Historical round contributions ${flobj({
+        roundId: round.id,
+        address: round.address,
+        amount,
+      })}`,
+    );
 
     const latestContrib = await this.contribRepo.findOne({
       where: { roundId: round.id },
       order: { blocknumber: 'DESC' },
     });
 
-    const offset = 100;
-    let limit = 0;
+    if (latestContrib) {
+      this.logger.verbose(
+        `Latest contribution ${flobj({
+          roundId: round.id,
+          address: round.address,
+          blocknumber: latestContrib.blocknumber,
+          timestamp: latestContrib.timestamp.toISOString(),
+        })}`,
+      );
+    }
+
+    const limit = 10;
+    let offset = 0;
 
     while (true) {
       const transfers = await this.solanabeach.getTokenTransfers(
@@ -110,10 +129,13 @@ export class ProjectsService {
         offset,
       );
 
-      if (!transfers) {
-        this.logger.error(`Can't fetch transfers for address ${round.address}`);
+      if (!transfers.length) {
         break;
       }
+
+      this.logger.verbose(
+        `Found transfers ${flobj({ count: transfers.length })}`,
+      );
 
       // Historic data?
       if (
@@ -164,11 +186,11 @@ export class ProjectsService {
       }
 
       // Last page?
-      if (transfers.length < offset) {
+      if (transfers.length < limit) {
         break;
       }
 
-      limit += offset;
+      offset += limit;
     }
 
     await this.roundRepo.update(

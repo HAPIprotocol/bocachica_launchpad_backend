@@ -155,6 +155,7 @@ describe('ProjectsService', () => {
         id: 1,
         projectId: 101,
         address: '9AGQDaDvEruNVTmL9HzEE4f8NMMMbfvm9rB6wABWGCc8',
+        timestamp: new Date('2021-07-29'),
       });
 
       jest
