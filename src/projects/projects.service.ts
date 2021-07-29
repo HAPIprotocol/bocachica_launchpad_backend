@@ -81,7 +81,7 @@ export class ProjectsService {
 
   async getRoundInfo(roundId: number) {
     return this.roundRepo.findOne({
-      where: { roundId },
+      where: { id: roundId },
       relations: ['project'],
     });
   }
