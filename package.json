@@ -19,7 +19,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm:cli": "ts-node ./node_modules/typeorm/cli -f ./src/ormconfig.ts"
+    "typeorm:cli": "ts-node ./node_modules/typeorm/cli -f ./src/ormconfig.ts",
+    "docker:build": "docker build -t registry.gitlab.com/hapi_p/bocachica-backend .",
+    "docker:push": "docker push registry.gitlab.com/hapi_p/bocachica-backend"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",
