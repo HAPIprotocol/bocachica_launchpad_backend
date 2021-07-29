@@ -56,25 +56,25 @@ export class ProjectRound {
   @ApiProperty({ example: 'First public round' })
   name: string;
 
-  @Column()
+  @Column({ type: 'bigint', default: '0' })
   @ApiProperty({ example: '1000000.0000' })
-  targetAmount: string;
+  targetAmount = '0';
 
-  @Column()
+  @Column({ type: 'bigint', default: '0' })
   @ApiProperty({ example: '1000000.0000' })
-  collectedAmount: string;
+  collectedAmount = '0';
 
-  @Column()
-  @ApiProperty({ example: '1.0000' })
-  minAmount: string;
+  @Column({ type: 'bigint', default: '0' })
+  @ApiProperty({ example: '10000' })
+  minAmount = '0';
 
-  @Column()
-  @ApiProperty({ example: '2.0000' })
-  maxAmount: string;
+  @Column({ type: 'bigint', default: '0' })
+  @ApiProperty({ example: '20000' })
+  maxAmount = '0';
 
   @Column({ type: 'decimal', nullable: true })
-  @ApiProperty({ example: 0.5 })
-  solPowerRate: number;
+  @ApiPropertyOptional({ example: 0.5 })
+  solPowerRate?: number;
 
   @Column({ default: false })
   @ApiProperty({ example: true })
@@ -84,6 +84,10 @@ export class ProjectRound {
   @ApiProperty({ example: 'SOL' })
   currency: string;
 
+  @Column({ type: 'int', default: 9 })
+  @ApiProperty({ example: 9 })
+  decimals = 9;
+
   @Column()
   @ApiProperty({ example: 'AEftAnw7UJLZx427q5AyaaA3XYzp9Kcw7MLu7yFJJgiA' })
   address: string;
@@ -92,9 +96,9 @@ export class ProjectRound {
   @ApiPropertyOptional({
     example: 'AEftAnw7UJLZx427q5AyaaA3XYzp9Kcw7MLu7yFJJgiA',
   })
-  smartcontractAddress: string;
+  smartcontractAddress?: string;
 
-  @Column({ type: 'decimal' })
+  @Column({ type: 'decimal', default: 1 })
   @ApiProperty({ example: 1 })
   emissionRatio: number;
 

@@ -198,6 +198,10 @@ describe('ProjectsService', () => {
           Promise.resolve(Object.assign(new ProjectContribution(), item)),
         );
 
+      jest
+        .spyOn(projectRoundProvider.repo, 'update')
+        .mockResolvedValue({} as any);
+
       const result = await projectsService.fetchContributions(ROUND);
 
       expect(result).toEqual({ total: '113042606' });

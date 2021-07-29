@@ -174,8 +174,16 @@ export class ProjectsService {
       limit += offset;
     }
 
+    await this.roundRepo.update(
+      { id: round.id },
+      { collectedAmount: total.toString() },
+    );
+
     this.logger.log(
-      `Fetched round contributions ${flobj({ total: total.toString() })}`,
+      `Fetched round contributions ${flobj({
+        roundId: round.id,
+        total: total.toString(),
+      })}`,
     );
 
     return { total: total.toString() };

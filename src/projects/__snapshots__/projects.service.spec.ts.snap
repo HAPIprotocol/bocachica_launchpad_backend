@@ -5,8 +5,13 @@ Object {
   "list": Array [
     Project {
       "currentRound": ProjectRound {
+        "collectedAmount": "0",
+        "decimals": 9,
         "id": 1,
+        "maxAmount": "0",
+        "minAmount": "0",
         "projectId": 1,
+        "targetAmount": "0",
       },
       "id": 1,
       "title": "top project",
@@ -33,6 +38,11 @@ exports[`ProjectsService getContrib should get round contribution 1`] = `10`;
 
 exports[`ProjectsService getRoundInfo should get round info 1`] = `
 ProjectRound {
+  "collectedAmount": "0",
+  "decimals": 9,
   "id": 10,
+  "maxAmount": "0",
+  "minAmount": "0",
+  "targetAmount": "0",
 }
 `;
