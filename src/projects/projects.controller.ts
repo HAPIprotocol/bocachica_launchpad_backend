@@ -40,7 +40,7 @@ export class ProjectsController {
     return { item };
   }
 
-  @Get()
+  @Get('roundContribution')
   @ApiOkResponse({
     description: 'Get round contribution for public key',
     type: GetRoundContributionDto,
