@@ -15,8 +15,9 @@ import { Project } from './entities/project.entity';
 export class ProjectsService {
   constructor(
     @InjectRepository(Project) private projectRepo: Repository<Project>,
-    @InjectRepository(Project) private roundRepo: Repository<ProjectRound>,
-    @InjectRepository(Project) private partnerRepo: Repository<ProjectPartner>,
+    @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
+    @InjectRepository(ProjectPartner)
+    private partnerRepo: Repository<ProjectPartner>,
   ) {}
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
