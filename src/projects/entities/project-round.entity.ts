@@ -61,8 +61,24 @@ export class ProjectRound {
   targetAmount: string;
 
   @Column()
+  @ApiProperty({ example: '1000000.0000' })
+  collectedAmount: string;
+
+  @Column()
   @ApiProperty({ example: '1.0000' })
   minAmount: string;
+
+  @Column()
+  @ApiProperty({ example: '2.0000' })
+  maxAmount: string;
+
+  @Column({ type: 'decimal', nullable: true })
+  @ApiProperty({ example: 0.5 })
+  solPowerRate: number;
+
+  @Column({ default: false })
+  @ApiProperty({ example: true })
+  solPowerScaling: boolean;
 
   @Column()
   @ApiProperty({ example: 'SOL' })
@@ -72,11 +88,15 @@ export class ProjectRound {
   @ApiProperty({ example: 'AEftAnw7UJLZx427q5AyaaA3XYzp9Kcw7MLu7yFJJgiA' })
   address: string;
 
-  @Column()
+  @Column({ nullable: true })
   @ApiPropertyOptional({
     example: 'AEftAnw7UJLZx427q5AyaaA3XYzp9Kcw7MLu7yFJJgiA',
   })
   smartcontractAddress: string;
+
+  @Column({ type: 'decimal' })
+  @ApiProperty({ example: 1 })
+  emissionRatio: number;
 
   @Column({ type: 'timestamptz' })
   @ApiProperty()

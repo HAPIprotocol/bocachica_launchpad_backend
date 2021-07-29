@@ -5,11 +5,11 @@ import { Not, Repository } from 'typeorm';
 import * as BN from 'bn.js';
 
 import { UserAccount } from './entities/user-account.entity';
-import { SolanabeachService } from './solanabeach.service';
 import { StakeAccount } from './entities/stake-account.entity';
 import { Validator } from './entities/validator.entity';
-import { WEB3_CONNECTION, Web3Connection } from '../web3/web3.module';
 import { StakeReward } from './entities/stake-rewards.entity';
+import { WEB3_CONNECTION, Web3Connection } from '../web3/web3.module';
+import { SolanabeachService } from '../solanabeach/solanabeach.service';
 
 const UPDATE_ACCOUNTS_PER_RUN = 10;
 

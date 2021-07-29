@@ -10,6 +10,7 @@ import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { FindAllProjectsResultDto } from './dto/find-all-projects.dto';
 import { FindOneProjectResultDto } from './dto/find-one-project.dto';
+import { GetRoundContributionDto } from './dto/get-round-contribution.dto';
 import { ProjectsService } from './projects.service';
 
 @Controller('projects')
@@ -37,5 +38,18 @@ export class ProjectsController {
   async findOne(@Param('id') id: string): Promise<FindOneProjectResultDto> {
     const item = await this.projectsService.findOne(+id);
     return { item };
+  }
+
+  @Get()
+  @ApiOkResponse({
+    description: 'Get round contribution for public key',
+    type: GetRoundContributionDto,
+  })
+  async getRoundContribution(
+    @Query('publicKey') publicKey: string,
+    @Query('roundId', ParseIntPipe) roundId: number,
+  ): Promise<GetRoundContributionDto> {
+    const amount = await this.projectsService.getContrib(publicKey, roundId);
+    return { amount };
   }
 }
