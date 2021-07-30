@@ -12,6 +12,8 @@ import { ProjectRound } from './entities/project-round.entity';
 import { Project } from './entities/project.entity';
 import { ProjectsService } from './projects.service';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
+import { Ticket } from '../tickets/entities/ticket.entity';
+import { TicketsService } from '../tickets/tickets.service';
 
 jest.mock('../solanabeach/solanabeach.service');
 
@@ -22,6 +24,7 @@ describe('ProjectsService', () => {
   let projectContribProvider: IMockEntityProvider<ProjectContribution>;
   let projectRoundProvider: IMockEntityProvider<ProjectRound>;
   let projectPartnerProvider: IMockEntityProvider<ProjectPartner>;
+  let ticketProvider: IMockEntityProvider<Ticket>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -30,15 +33,18 @@ describe('ProjectsService', () => {
     projectContribProvider = mockEntityProvider(ProjectContribution);
     projectRoundProvider = mockEntityProvider(ProjectRound);
     projectPartnerProvider = mockEntityProvider(ProjectPartner);
+    ticketProvider = mockEntityProvider(Ticket);
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [Web3Module, SolanabeachModule],
       providers: [
+        TicketsService,
         ProjectsService,
         projectProvider,
         projectContribProvider,
         projectRoundProvider,
         projectPartnerProvider,
+        ticketProvider,
       ],
     }).compile();
 

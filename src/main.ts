@@ -5,6 +5,7 @@ import * as helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { CORS_ORIGINS } from './config';
+import { LoggingInterceptor } from './common/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +14,7 @@ async function bootstrap() {
   if (CORS_ORIGINS.length) {
     app.enableCors({ origin: CORS_ORIGINS, credentials: true });
   }
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   const config = new DocumentBuilder()
     .setTitle('Boca Chica Backend')

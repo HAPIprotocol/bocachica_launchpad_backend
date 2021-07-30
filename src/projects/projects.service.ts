@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { FindOperator, In, Not, Repository } from 'typeorm';
+import { PublicKey } from '@solana/web3.js';
 import * as BN from 'bn.js';
 
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
@@ -9,11 +10,13 @@ import { ProjectWithCurrentRound } from './dto/find-all-projects.dto';
 import { ProjectPartner } from './entities/project-partner.entity';
 import {
   ProjectRound,
+  ProjectRoundAccessType,
   ProjectRoundStatus,
 } from './entities/project-round.entity';
 import { Project } from './entities/project.entity';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { flobj } from '../common/string';
+import { TicketsService } from '../tickets/tickets.service';
 
 @Injectable()
 export class ProjectsService {
@@ -27,6 +30,7 @@ export class ProjectsService {
     @InjectRepository(ProjectPartner)
     private partnerRepo: Repository<ProjectPartner>,
     private readonly solanabeach: SolanabeachService,
+    private readonly ticketsService: TicketsService,
   ) {}
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
@@ -212,5 +216,46 @@ export class ProjectsService {
     return this.roundRepo.find({
       where: { status: ProjectRoundStatus.Active },
     });
+  }
+
+  async findAllRounds(filters: {
+    skip: number;
+    take: number;
+    accessType?: ProjectRoundAccessType;
+    status: ProjectRoundStatus;
+    publicKey?: string;
+  }) {
+    if (filters.take > 10) {
+      filters.take = 10;
+    }
+
+    const where: {
+      accessType?: ProjectRoundAccessType;
+      status?: ProjectRoundStatus;
+      roundIds?: FindOperator<number>;
+    } = {};
+
+    if (filters.publicKey) {
+      let publicKey: PublicKey;
+      try {
+        publicKey = new PublicKey(filters.publicKey);
+      } catch (_) {}
+
+      if (publicKey) {
+        const roundIds = await this.ticketsService.getRoundsForPubkey(
+          filters.publicKey,
+        );
+        where.roundIds = In(roundIds);
+      }
+    }
+
+    const [list, total] = await this.roundRepo.findAndCount({
+      order: { startDate: 'DESC' },
+      where,
+      skip: filters.skip > 0 ? filters.skip : 0,
+      take: filters.take,
+    });
+
+    return { list, total };
   }
 }

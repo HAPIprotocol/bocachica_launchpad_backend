@@ -9,6 +9,10 @@ export class CreateTicketDto {
   @IsInt()
   projectId: number;
 
+  @ApiProperty({ example: 101 })
+  @IsInt()
+  roundId: number;
+
   @ApiProperty({ example: 'JyBc9JbET5v73kAXturzQw9s2AiXQY8gtdbtRMeWtUu' })
   @IsString()
   publicKey: string;

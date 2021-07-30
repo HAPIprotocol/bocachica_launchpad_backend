@@ -48,6 +48,7 @@ export class TicketsService {
       throw new BadRequestException(`Invalid signature: hex encoding`);
     }
 
+    ticket.roundId = createTicketDto.roundId;
     ticket.projectId = createTicketDto.projectId;
     ticket.message = createTicketDto.message;
     ticket.publicKey = createTicketDto.publicKey;
@@ -100,5 +101,15 @@ export class TicketsService {
     } catch (_) {
       return false;
     }
+  }
+
+  async getRoundsForPubkey(publicKey: string): Promise<number[]> {
+    const rows = await this.ticketRepo
+      .createQueryBuilder()
+      .select('roundId', 'id')
+      .where({ publicKey })
+      .getRawMany();
+
+    return rows.map((row) => row.id);
   }
 }

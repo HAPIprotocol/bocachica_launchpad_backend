@@ -6,11 +6,21 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { FindAllProjectsResultDto } from './dto/find-all-projects.dto';
+import { FindAllRoundsResultDto } from './dto/find-all-rounds.dto';
 import { FindOneProjectResultDto } from './dto/find-one-project.dto';
 import { GetRoundContributionDto } from './dto/get-round-contribution.dto';
+import {
+  ProjectRoundAccessType,
+  ProjectRoundStatus,
+} from './entities/project-round.entity';
 import { ProjectsService } from './projects.service';
 
 @Controller('projects')
@@ -22,6 +32,11 @@ export class ProjectsController {
   @ApiOkResponse({
     description: 'Return list of projects',
     type: FindAllProjectsResultDto,
+  })
+  @ApiQuery({
+    name: 'skip',
+    type: Number,
+    required: false,
   })
   findAll(
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip?: number,
@@ -51,5 +66,53 @@ export class ProjectsController {
   ): Promise<GetRoundContributionDto> {
     const amount = await this.projectsService.getContrib(publicKey, roundId);
     return { amount };
+  }
+
+  @Get('rounds')
+  @ApiOkResponse({
+    description: 'Get round list',
+    type: FindAllRoundsResultDto,
+  })
+  @ApiQuery({
+    name: 'skip',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'take',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'accessType',
+    type: Number,
+    required: false,
+    enum: ProjectRoundAccessType,
+  })
+  @ApiQuery({
+    name: 'status',
+    type: Number,
+    required: false,
+    enum: ProjectRoundStatus,
+  })
+  @ApiQuery({
+    name: 'publicKey',
+    type: String,
+    required: false,
+  })
+  async findAllRounds(
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
+    @Query('take', new DefaultValuePipe(3), ParseIntPipe) take: number,
+    @Query('accessType') accessType?: ProjectRoundAccessType,
+    @Query('status') status?: ProjectRoundStatus,
+    @Query('publicKey') publicKey?: string,
+  ): Promise<FindAllRoundsResultDto> {
+    return this.projectsService.findAllRounds({
+      skip,
+      take,
+      accessType,
+      status,
+      publicKey,
+    });
   }
 }

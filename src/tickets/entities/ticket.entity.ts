@@ -12,6 +12,10 @@ export class Ticket {
   projectId: number;
 
   @Column()
+  @ApiProperty({ example: 101 })
+  roundId: number;
+
+  @Column()
   @ApiProperty({ example: 'JyBc9JbET5v73kAXturzQw9s2AiXQY8gtdbtRMeWtUu' })
   publicKey: string;
 

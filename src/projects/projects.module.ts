@@ -10,6 +10,7 @@ import { ProjectPartner } from './entities/project-partner.entity';
 import { ProjectRound } from './entities/project-round.entity';
 import { ProjectContribution } from './entities/project-contribution.entity';
 import { ContribCheckerService } from './contrib-checker.service';
+import { TicketsModule } from '../tickets/tickets.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ContribCheckerService } from './contrib-checker.service';
     ]),
     Web3Module,
     SolanabeachModule,
+    TicketsModule,
   ],
   controllers: [ProjectsController],
   providers: [ProjectsService, ContribCheckerService],
