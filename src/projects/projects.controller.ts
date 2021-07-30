@@ -44,17 +44,6 @@ export class ProjectsController {
     return this.projectsService.findAll(skip);
   }
 
-  @Get(':id')
-  @ApiOkResponse({
-    description: 'Return record data',
-    type: FindOneProjectResultDto,
-  })
-  @ApiNotFoundResponse({ status: 404, description: 'Not found' })
-  async findOne(@Param('id') id: string): Promise<FindOneProjectResultDto> {
-    const item = await this.projectsService.findOne(+id);
-    return { item };
-  }
-
   @Get('roundContribution')
   @ApiOkResponse({
     description: 'Get round contribution for public key',
@@ -114,5 +103,16 @@ export class ProjectsController {
       status,
       publicKey,
     });
+  }
+
+  @Get(':id')
+  @ApiOkResponse({
+    description: 'Return record data',
+    type: FindOneProjectResultDto,
+  })
+  @ApiNotFoundResponse({ status: 404, description: 'Not found' })
+  async findOne(@Param('id') id: string): Promise<FindOneProjectResultDto> {
+    const item = await this.projectsService.findOne(+id);
+    return { item };
   }
 }
