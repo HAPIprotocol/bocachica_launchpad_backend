@@ -112,7 +112,7 @@ export class ProjectRound {
 
   @Column({ type: 'timestamptz', nullable: true })
   @ApiPropertyOptional()
-  emissionDate: Date;
+  emissionDate?: Date;
 
   @ManyToOne(() => Project, (project) => project.rounds)
   @JoinColumn({ name: 'projectId' })
