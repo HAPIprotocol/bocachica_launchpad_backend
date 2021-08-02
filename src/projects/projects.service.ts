@@ -239,7 +239,9 @@ export class ProjectsService {
       let publicKey: PublicKey;
       try {
         publicKey = new PublicKey(filters.publicKey);
-      } catch (_) {}
+      } catch (_) {
+        return { list: [], total: 0 };
+      }
 
       if (publicKey) {
         const roundIds = await this.ticketsService.getRoundsForPubkey(
@@ -254,6 +256,7 @@ export class ProjectsService {
       where,
       skip: filters.skip > 0 ? filters.skip : 0,
       take: filters.take,
+      relations: ['project'],
     });
 
     return { list, total };
