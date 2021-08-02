@@ -261,4 +261,17 @@ export class ProjectsService {
 
     return { list, total };
   }
+
+  async findOneRound(id: number) {
+    const round = await this.roundRepo.findOne({
+      where: { id },
+      relations: ['project'],
+    });
+
+    if (!round) {
+      throw new NotFoundException();
+    }
+
+    return round;
+  }
 }

@@ -110,6 +110,10 @@ export class ProjectRound {
   @ApiProperty()
   endDate: Date;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  @ApiPropertyOptional()
+  emissionDate: Date;
+
   @ManyToOne(() => Project, (project) => project.rounds)
   @JoinColumn({ name: 'projectId' })
   project: Project;

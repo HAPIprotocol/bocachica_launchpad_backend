@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   Column,
   Entity,
@@ -43,6 +43,12 @@ export class Project {
       'https://explorer.solana.com/address/AEftAnw7UJLZx427q5AyaaA3XYzp9Kcw7MLu7yFJJgiA',
   })
   smartContractUrl: string;
+
+  @Column({ nullable: true })
+  @ApiPropertyOptional({
+    example: 'https://www.mylittleproject.example',
+  })
+  siteUrl?: string;
 
   @Column()
   @ApiProperty({ example: 'https://example.com/logo.png' })

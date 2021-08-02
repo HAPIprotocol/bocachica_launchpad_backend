@@ -16,6 +16,7 @@ import {
 import { FindAllProjectsResultDto } from './dto/find-all-projects.dto';
 import { FindAllRoundsResultDto } from './dto/find-all-rounds.dto';
 import { FindOneProjectResultDto } from './dto/find-one-project.dto';
+import { FindOneRoundResultDto } from './dto/find-one-round.dto';
 import { GetRoundContributionDto } from './dto/get-round-contribution.dto';
 import {
   ProjectRoundAccessType,
@@ -103,6 +104,17 @@ export class ProjectsController {
       status,
       publicKey,
     });
+  }
+
+  @Get('round/:id')
+  @ApiOkResponse({
+    description: 'Return project round data',
+    type: FindOneRoundResultDto,
+  })
+  @ApiNotFoundResponse({ status: 404, description: 'Not found' })
+  async findOneRound(@Param('id') id: string): Promise<FindOneRoundResultDto> {
+    const item = await this.projectsService.findOneRound(+id);
+    return { item };
   }
 
   @Get(':id')
