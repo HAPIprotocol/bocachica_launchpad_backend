@@ -24,7 +24,7 @@ const CONTRIB_CHECKER_JOB_CONCURRENCY = 10;
 export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ContribCheckerService.name);
   public readonly queue: Queue<ContribCheckerJob>;
-  private readonly roundSubs: number[] = [];
+  readonly roundSubs: number[] = [];
 
   constructor(
     private readonly projectsService: ProjectsService,
@@ -105,6 +105,7 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
     for (const subId of this.roundSubs) {
       await this.web3.removeAccountChangeListener(subId);
     }
+    this.roundSubs = [];
 
     const rounds = await this.projectsService.getActiveRounds();
     for (const round of rounds) {
