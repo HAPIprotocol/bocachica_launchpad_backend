@@ -24,7 +24,6 @@ export function DatabaseConfigFactory() {
     password: DB_PASSWORD,
     database: DB_DATABASE,
     autoLoadEntities: true,
-    logging: true,
   };
 }
 
