@@ -232,7 +232,7 @@ export class ProjectsService {
     const where: {
       accessType?: ProjectRoundAccessType;
       status?: ProjectRoundStatus;
-      roundIds?: FindOperator<number>;
+      id?: FindOperator<number>;
     } = {};
 
     if (filters.publicKey) {
@@ -247,7 +247,7 @@ export class ProjectsService {
         const roundIds = await this.ticketsService.getRoundsForPubkey(
           filters.publicKey,
         );
-        where.roundIds = In(roundIds);
+        where.id = In(roundIds);
       }
     }
 
