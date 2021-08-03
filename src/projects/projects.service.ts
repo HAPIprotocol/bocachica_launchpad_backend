@@ -159,10 +159,10 @@ export class ProjectsService {
           amount: transfer.amount,
         };
 
-        if (transfer.destination.address !== round.address) {
-          this.logger.debug(`Invalid destination ${flobj(logobj)}`);
-          continue;
-        }
+        // if (transfer.destination.address !== round.address) {
+        //   this.logger.debug(`Invalid destination ${flobj(logobj)}`);
+        //   continue;
+        // }
 
         if (!transfer.valid) {
           this.logger.debug(`Invalid contrib ${flobj(logobj)}`);
