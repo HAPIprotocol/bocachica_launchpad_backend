@@ -33,6 +33,7 @@ describe('TicketsController', () => {
 
     const result = await controller.create({
       projectId: 101,
+      roundId: 101,
       message: 'I want to join project #1 on Boca Chica!',
       publicKey: '3CEXr4pyPo2DUbnCNnt8ZjfVq6b4tvrnSx6q1omRxGGW',
       signature:

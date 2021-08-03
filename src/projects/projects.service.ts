@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOperator, In, Not, Repository } from 'typeorm';
+import { FindConditions, In, Not, Repository } from 'typeorm';
 import { PublicKey } from '@solana/web3.js';
 import * as BN from 'bn.js';
 
@@ -224,16 +224,13 @@ export class ProjectsService {
     accessType?: ProjectRoundAccessType;
     status: ProjectRoundStatus;
     publicKey?: string;
+    query?: string;
   }) {
     if (filters.take > 10) {
       filters.take = 10;
     }
 
-    const where: {
-      accessType?: ProjectRoundAccessType;
-      status?: ProjectRoundStatus;
-      id?: FindOperator<number>;
-    } = {};
+    const where: FindConditions<ProjectRound>[] = [{}];
 
     if (filters.publicKey) {
       let publicKey: PublicKey;
@@ -247,17 +244,34 @@ export class ProjectsService {
         const roundIds = await this.ticketsService.getRoundsForPubkey(
           filters.publicKey,
         );
-        where.id = In(roundIds);
+        where[0].id = In(roundIds);
       }
     }
 
-    const [list, total] = await this.roundRepo.findAndCount({
-      order: { startDate: 'DESC' },
-      where,
-      skip: filters.skip > 0 ? filters.skip : 0,
-      take: filters.take,
-      relations: ['project'],
-    });
+    let list: ProjectRound[];
+    let total: number;
+
+    if (filters.query) {
+      const qb = this.roundRepo
+        .createQueryBuilder('r')
+        .leftJoinAndSelect('r.project', 'project')
+        .where(where)
+        .andWhere(
+          `project.title LIKE '%${filters.query}%' OR project.ticker LIKE '%${filters.query}%' OR r.name LIKE '%${filters.query}%' OR r.currency LIKE '%${filters.query}'`,
+        )
+        .skip(filters.skip > 0 ? filters.skip : 0)
+        .take(filters.take);
+
+      [list, total] = await qb.getManyAndCount();
+    } else {
+      [list, total] = await this.roundRepo.findAndCount({
+        order: { startDate: 'DESC' },
+        where,
+        skip: filters.skip > 0 ? filters.skip : 0,
+        take: filters.take,
+        relations: ['project'],
+      });
+    }
 
     return { list, total };
   }

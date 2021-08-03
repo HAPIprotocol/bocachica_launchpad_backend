@@ -90,12 +90,18 @@ export class ProjectsController {
     type: String,
     required: false,
   })
+  @ApiQuery({
+    name: 'query',
+    type: String,
+    required: false,
+  })
   async findAllRounds(
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
     @Query('take', new DefaultValuePipe(3), ParseIntPipe) take: number,
     @Query('accessType') accessType?: ProjectRoundAccessType,
     @Query('status') status?: ProjectRoundStatus,
     @Query('publicKey') publicKey?: string,
+    @Query('query') query?: string,
   ): Promise<FindAllRoundsResultDto> {
     return this.projectsService.findAllRounds({
       skip,
@@ -103,6 +109,7 @@ export class ProjectsController {
       accessType,
       status,
       publicKey,
+      query,
     });
   }
 
