@@ -105,8 +105,8 @@ export class TicketsService {
 
   async getRoundsForPubkey(publicKey: string): Promise<number[]> {
     const rows = await this.ticketRepo
-      .createQueryBuilder()
-      .select('id')
+      .createQueryBuilder('t')
+      .select('t.roundId', 'id')
       .where({ publicKey })
       .getRawMany();
 

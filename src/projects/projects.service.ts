@@ -230,7 +230,7 @@ export class ProjectsService {
       filters.take = 10;
     }
 
-    const where: FindConditions<ProjectRound>[] = [{}];
+    const where: FindConditions<ProjectRound> = {};
 
     if (filters.publicKey) {
       let publicKey: PublicKey;
@@ -244,7 +244,7 @@ export class ProjectsService {
         const roundIds = await this.ticketsService.getRoundsForPubkey(
           filters.publicKey,
         );
-        where[0].id = In(roundIds);
+        where.id = In(roundIds);
       }
     }
 
