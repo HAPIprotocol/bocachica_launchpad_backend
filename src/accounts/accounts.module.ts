@@ -1,7 +1,7 @@
 import { CacheModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SolanabeachModule } from 'src/solanabeach/solanabeach.module';
 
+import { SolanabeachModule } from '../solanabeach/solanabeach.module';
 import { Web3Module } from '../web3/web3.module';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
