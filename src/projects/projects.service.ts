@@ -273,6 +273,14 @@ export class ProjectsService {
       }
     }
 
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.accessType) {
+      where.accessType = filters.accessType;
+    }
+
     let list: ProjectRound[];
     let total: number;
 
