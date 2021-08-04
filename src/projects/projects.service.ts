@@ -102,13 +102,15 @@ export class ProjectsService {
 
     let total = new BN(amount || 0);
 
-    this.logger.verbose(
-      `Historical round contributions ${flobj({
-        roundId: round.id,
-        address: round.address,
-        amount,
-      })}`,
-    );
+    if (amount !== undefined && amount > 0) {
+      this.logger.verbose(
+        `Historical round contributions ${flobj({
+          roundId: round.id,
+          address: round.address,
+          amount,
+        })}`,
+      );
+    }
 
     const latestContrib = await this.contribRepo.findOne({
       where: { roundId: round.id },
@@ -202,7 +204,7 @@ export class ProjectsService {
 
         const contrib = new ProjectContribution();
         contrib.roundId = round.id;
-        contrib.publicKey = transfer.source.address;
+        contrib.publicKey = publicKey;
         contrib.blocknumber = transfer.blocknumber;
         contrib.timestamp = new Date(transfer.timestamp.absolute);
         contrib.amount = transfer.amount.toString();
