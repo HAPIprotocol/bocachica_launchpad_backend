@@ -14,6 +14,8 @@ describe('App (e2e)', () => {
   let redisContainer: ContainerHandle;
   let pgContainer: ContainerHandle;
 
+  jest.setTimeout(30000);
+
   beforeAll(async () => {
     [redisContainer, pgContainer] = await Promise.all([
       createRedisContainer(),
@@ -27,6 +29,8 @@ describe('App (e2e)', () => {
       autoLoadEntities: true,
       synchronize: true,
     });
+
+    jest.setTimeout(5000);
   });
 
   beforeEach(async () => {

@@ -9,7 +9,7 @@ export interface ContainerHandle {
 }
 
 export async function createRedisContainer(
-  image = 'redis:6',
+  image = 'redis:6-alpine',
 ): Promise<ContainerHandle> {
   const container = await new GenericContainer(image)
     .withExposedPorts(6379)
@@ -23,19 +23,20 @@ export async function createRedisContainer(
       return `redis://${host}:${port}`;
     },
     async stop() {
-      if (container) container.stop();
+      if (container) await container.stop({ timeout: 100 });
     },
   };
 }
 
 export async function createPostgresContainer(
-  image = 'postgres:13',
+  image = 'postgres:13-alpine',
 ): Promise<ContainerHandle> {
   const container = await new GenericContainer(image)
     .withExposedPorts(5432)
     .withTmpFs({
       '/var/lib/postgresql/data': 'rw,noexec,nosuid,size=65536k',
     })
+    .withStartupTimeout(10000)
     .withWaitStrategy(
       Wait.forLogMessage('database system is ready to accept connections'),
     )
@@ -53,7 +54,7 @@ export async function createPostgresContainer(
   return {
     connectionString,
     async stop() {
-      if (container) container.stop();
+      if (container) await container.stop({ timeout: 100 });
     },
     module() {
       return TypeOrmModule.forRootAsync({
@@ -62,6 +63,7 @@ export async function createPostgresContainer(
           url: connectionString(),
           autoLoadEntities: true,
           synchronize: true,
+          verboseRetryLog: false,
         }),
       });
     },
