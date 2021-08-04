@@ -206,7 +206,7 @@ export class ProjectsService {
         contrib.roundId = round.id;
         contrib.publicKey = publicKey;
         contrib.blocknumber = transfer.blocknumber;
-        contrib.timestamp = new Date(transfer.timestamp.absolute);
+        contrib.timestamp = new Date(transfer.timestamp.absolute * 1000);
         contrib.amount = transfer.amount.toString();
         contrib.txHash = transfer.txhash;
         await this.contribRepo.save(contrib);
