@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Queue from 'bee-queue';
+import { PublicKey } from '@solana/web3.js';
 
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { flobj } from '../common/string';
 import { QUEUE_REDIS_URL } from '../config';
 import { ProjectsService } from './projects.service';
-import { PublicKey } from '@solana/web3.js';
 
 export interface ContribCheckerJob {
   roundId: number;

@@ -1,7 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindConditions, In, Not, Repository } from 'typeorm';
-import { PublicKey } from '@solana/web3.js';
+import { ParsedAccountData, PublicKey } from '@solana/web3.js';
 import * as BN from 'bn.js';
 
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
@@ -17,6 +17,7 @@ import { Project } from './entities/project.entity';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { flobj } from '../common/string';
 import { TicketsService } from '../tickets/tickets.service';
+import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 
 @Injectable()
 export class ProjectsService {
@@ -31,6 +32,8 @@ export class ProjectsService {
     private partnerRepo: Repository<ProjectPartner>,
     private readonly solanabeach: SolanabeachService,
     private readonly ticketsService: TicketsService,
+    @Inject(WEB3_CONNECTION)
+    private readonly web3: Web3Connection,
   ) {}
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
@@ -151,14 +154,34 @@ export class ProjectsService {
       }
 
       for (const transfer of transfers) {
-        const publicKey = transfer.source.address;
+        const tokenAccount = transfer.source.address;
         const txHash = transfer.txhash;
+        let publicKey: string;
+
+        try {
+          const data = await this.web3.getParsedAccountInfo(
+            new PublicKey(tokenAccount),
+          );
+
+          publicKey = (data.value.data as ParsedAccountData).parsed.info.owner;
+        } catch (_) {
+          this.logger.error(
+            `Couldn't fetch token account data ${flobj({
+              tokenAccount,
+              txHash,
+              amount: transfer.amount,
+            })}`,
+          );
+        }
+
         const logobj = {
+          tokenAccount,
           publicKey,
           txHash,
           amount: transfer.amount,
         };
 
+        //// Destination address is a token account, not round collection address
         // if (transfer.destination.address !== round.address) {
         //   this.logger.debug(`Invalid destination ${flobj(logobj)}`);
         //   continue;
