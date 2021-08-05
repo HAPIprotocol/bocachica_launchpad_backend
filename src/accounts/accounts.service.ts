@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 import { Not, Repository } from 'typeorm';
 import * as BN from 'bn.js';
 
@@ -10,6 +11,7 @@ import { Validator } from './entities/validator.entity';
 import { StakeReward } from './entities/stake-rewards.entity';
 import { WEB3_CONNECTION, Web3Connection } from '../web3/web3.module';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
+import { getProcessType, ProcessType } from 'src/cluster';
 
 const UPDATE_ACCOUNTS_PER_RUN = 10;
 
@@ -31,9 +33,33 @@ export class AccountsService {
     private readonly validatorRepo: Repository<Validator>,
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
-  ) {}
+    private readonly schedulerRegistry: SchedulerRegistry,
+  ) {
+    if (getProcessType() === ProcessType.Worker) {
+      {
+        this.logger.log(`Starting cron job updateAccounts`);
 
-  @Cron('* * * * * *')
+        const job = new CronJob(CronExpression.EVERY_SECOND, async () => {
+          await this.updateAccounts();
+        });
+
+        this.schedulerRegistry.addCronJob('updateAccounts', job);
+        job.start();
+      }
+
+      {
+        this.logger.log(`Starting cron job updateEpoch`);
+
+        const job = new CronJob(CronExpression.EVERY_MINUTE, async () => {
+          await this.updateEpoch();
+        });
+
+        this.schedulerRegistry.addCronJob('updateEpoch', job);
+        job.start();
+      }
+    }
+  }
+
   async updateAccounts() {
     if (this.isUpdateAccountsWorking) {
       return;
@@ -57,7 +83,6 @@ export class AccountsService {
     this.isUpdateAccountsWorking = false;
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
   async updateEpoch() {
     const { epoch } = await this.web3.getEpochInfo();
     if (this.lastEpoch !== epoch) {

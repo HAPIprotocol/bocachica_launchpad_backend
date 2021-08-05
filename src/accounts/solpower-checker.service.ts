@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import * as Queue from 'bee-queue';
 
+import { getProcessType, ProcessType } from '../cluster';
 import { QUEUE_REDIS_URL, SOLPOWER_CHECKER_JOB_CONCURRENCY } from '../config';
 import { AccountsService } from './accounts.service';
 
@@ -19,59 +20,68 @@ export class SolPowerCheckerService implements OnModuleInit, OnModuleDestroy {
   public readonly queue: Queue<SolPowerCheckerJob>;
 
   constructor(private readonly accountsService: AccountsService) {
-    const queue = new Queue(SolPowerCheckerService.name, {
-      redis: QUEUE_REDIS_URL,
-    });
+    if (getProcessType() === ProcessType.Web) {
+      const queue = new Queue(SolPowerCheckerService.name, {
+        redis: QUEUE_REDIS_URL,
+        isWorker: false,
+      });
 
-    queue.process(SOLPOWER_CHECKER_JOB_CONCURRENCY, async (job) => {
-      const address = job.data.address;
+      this.queue = queue;
+    } else {
+      const queue = new Queue(SolPowerCheckerService.name, {
+        redis: QUEUE_REDIS_URL,
+      });
 
-      const isExist = await this.accountsService.checkUserAccount(address);
-      if (!isExist) {
-        job.retries(0);
-        throw new Error(`User address not found`);
-      }
+      queue.process(SOLPOWER_CHECKER_JOB_CONCURRENCY, async (job) => {
+        const address = job.data.address;
 
-      try {
-        const { lamports } = await this.accountsService.fetchStakeAccounts(
-          address,
+        const isExist = await this.accountsService.checkUserAccount(address);
+        if (!isExist) {
+          job.retries(0);
+          throw new Error(`User address not found`);
+        }
+
+        try {
+          const { lamports } = await this.accountsService.fetchStakeAccounts(
+            address,
+          );
+
+          return lamports.toString();
+        } catch (error) {
+          throw error;
+        }
+      });
+
+      queue.on('ready', () => {
+        this.logger.log(`Queue is ready`);
+      });
+
+      queue.on('error', (err) => {
+        this.logger.error(err.message);
+      });
+
+      queue.on('job succeeded', (jobId, result) => {
+        this.logger.debug(`Job succeeded id=${jobId} SolPower=${result}`);
+      });
+
+      queue.on('job retrying', (jobId, error) => {
+        this.logger.debug(
+          `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
         );
+      });
 
-        return lamports.toString();
-      } catch (error) {
-        throw error;
-      }
-    });
+      queue.on('job failed', (jobId, error) => {
+        this.logger.error(
+          `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
+        );
+      });
 
-    queue.on('ready', () => {
-      this.logger.log(`Queue is ready`);
-    });
+      queue.on('job progress', (jobId, progress) => {
+        this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
+      });
 
-    queue.on('error', (err) => {
-      this.logger.error(err.message);
-    });
-
-    queue.on('job succeeded', (jobId, result) => {
-      this.logger.debug(`Job succeeded id=${jobId} SolPower=${result}`);
-    });
-
-    queue.on('job retrying', (jobId, error) => {
-      this.logger.debug(
-        `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
-      );
-    });
-
-    queue.on('job failed', (jobId, error) => {
-      this.logger.error(
-        `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
-      );
-    });
-
-    queue.on('job progress', (jobId, progress) => {
-      this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
-    });
-
-    this.queue = queue;
+      this.queue = queue;
+    }
   }
 
   async onModuleInit() {

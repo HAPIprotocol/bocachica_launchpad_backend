@@ -4,6 +4,11 @@ import { from } from 'env-var';
 config();
 const env = from(process.env, {});
 
+export const PROCESS_RESPAWN_INTERVAL = env
+  .get('PROCESS_RESPAWN_INTERVAL')
+  .default(5000)
+  .asIntPositive();
+
 export const DB_TYPE = env
   .get('DB_TYPE')
   .required(true)

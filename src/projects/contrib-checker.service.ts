@@ -5,14 +5,16 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import * as Queue from 'bee-queue';
 import { PublicKey } from '@solana/web3.js';
+import { CronJob } from 'cron';
 
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { flobj } from '../common/string';
 import { QUEUE_REDIS_URL } from '../config';
 import { ProjectsService } from './projects.service';
+import { getProcessType, ProcessType } from '../cluster';
 
 export interface ContribCheckerJob {
   roundId: number;
@@ -30,55 +32,86 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
     private readonly projectsService: ProjectsService,
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
+    private readonly schedulerRegistry: SchedulerRegistry,
   ) {
-    const queue = new Queue(ContribCheckerService.name, {
-      redis: QUEUE_REDIS_URL,
-    });
+    if (getProcessType() === ProcessType.Web) {
+      const queue = new Queue(ContribCheckerService.name, {
+        redis: QUEUE_REDIS_URL,
+        isWorker: false,
+      });
 
-    queue.process(CONTRIB_CHECKER_JOB_CONCURRENCY, async (job) => {
-      const { roundId } = job.data;
+      this.queue = queue;
+    } else {
+      const queue = new Queue(ContribCheckerService.name, {
+        redis: QUEUE_REDIS_URL,
+      });
 
-      const round = await this.projectsService.getRoundInfo(roundId);
+      queue.process(CONTRIB_CHECKER_JOB_CONCURRENCY, async (job) => {
+        const { roundId } = job.data;
 
-      if (!round) {
-        throw new Error(`Round not found: ${roundId}`);
+        const round = await this.projectsService.getRoundInfo(roundId);
+
+        if (!round) {
+          throw new Error(`Round not found: ${roundId}`);
+        }
+
+        await this.projectsService.fetchContributions(round);
+      });
+
+      queue.on('ready', () => {
+        this.logger.log(`Queue is ready`);
+      });
+
+      queue.on('error', (err) => {
+        this.logger.error(err.message);
+      });
+
+      queue.on('job succeeded', (jobId, result) => {
+        this.logger.debug(`Job succeeded id=${jobId} total=${result}`);
+      });
+
+      queue.on('job retrying', (jobId, error) => {
+        this.logger.debug(
+          `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
+        );
+      });
+
+      queue.on('job failed', (jobId, error) => {
+        this.logger.error(
+          `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
+        );
+      });
+
+      queue.on('job progress', (jobId, progress) => {
+        this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
+      });
+
+      this.queue = queue;
+
+      {
+        this.logger.log(`Starting cron job checkRoundContributions`);
+
+        const job = new CronJob(CronExpression.EVERY_10_MINUTES, async () => {
+          await this.checkRoundContributions();
+        });
+
+        this.schedulerRegistry.addCronJob('checkRoundContributions', job);
+        job.start();
       }
 
-      await this.projectsService.fetchContributions(round);
-    });
+      {
+        this.logger.log(`Starting cron job subscribeForRounds`);
 
-    queue.on('ready', () => {
-      this.logger.log(`Queue is ready`);
-    });
+        const job = new CronJob(CronExpression.EVERY_10_MINUTES, async () => {
+          await this.subscribeForRounds();
+        });
 
-    queue.on('error', (err) => {
-      this.logger.error(err.message);
-    });
-
-    queue.on('job succeeded', (jobId, result) => {
-      this.logger.debug(`Job succeeded id=${jobId} total=${result}`);
-    });
-
-    queue.on('job retrying', (jobId, error) => {
-      this.logger.debug(
-        `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
-      );
-    });
-
-    queue.on('job failed', (jobId, error) => {
-      this.logger.error(
-        `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
-      );
-    });
-
-    queue.on('job progress', (jobId, progress) => {
-      this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
-    });
-
-    this.queue = queue;
+        this.schedulerRegistry.addCronJob('subscribeForRounds', job);
+        job.start();
+      }
+    }
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
   async checkRoundContributions() {
     const rounds = await this.projectsService.getActiveRounds();
     this.logger.log(
@@ -95,7 +128,6 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
   async subscribeForRounds() {
     this.logger.debug(
       `Cleaning round account subscriptions ${flobj({
@@ -103,7 +135,13 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
       })}`,
     );
     for (const subId of this.roundSubs) {
-      await this.web3.removeAccountChangeListener(subId);
+      try {
+        await this.web3.removeAccountChangeListener(subId);
+      } catch (_) {
+        this.logger.warn(
+          `Can't remove account change listener ${flobj({ subId })}`,
+        );
+      }
     }
     this.roundSubs = [];
 
@@ -133,8 +171,10 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     await this.queue.ready();
-    await this.checkRoundContributions();
-    await this.subscribeForRounds();
+    if (getProcessType() === ProcessType.Worker) {
+      await this.checkRoundContributions();
+      await this.subscribeForRounds();
+    }
   }
 
   async onModuleDestroy() {

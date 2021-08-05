@@ -7,6 +7,7 @@ import {
 import { Connection, PublicKey } from '@solana/web3.js';
 import * as Queue from 'bee-queue';
 import * as BN from 'bn.js';
+import { getProcessType, ProcessType } from 'src/cluster';
 
 import {
   BALANCE_CHECKER_JOB_CONCURRENCY,
@@ -29,48 +30,57 @@ export class BalanceCheckerService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly accountsService: AccountsService) {
     this.solana = new Connection(SOLANA_ENDPOINT_URL, 'finalized');
 
-    const queue = new Queue(BalanceCheckerService.name, {
-      redis: QUEUE_REDIS_URL,
-    });
+    if (getProcessType() === ProcessType.Web) {
+      const queue = new Queue(BalanceCheckerService.name, {
+        redis: QUEUE_REDIS_URL,
+        isWorker: false,
+      });
 
-    queue.process(BALANCE_CHECKER_JOB_CONCURRENCY, async (job) => {
-      const address = job.data.address;
-      const lamports = await this.solana.getBalance(new PublicKey(address));
+      this.queue = queue;
+    } else {
+      const queue = new Queue(BalanceCheckerService.name, {
+        redis: QUEUE_REDIS_URL,
+      });
 
-      await this.accountsService.updateBalance(address, lamports);
+      queue.process(BALANCE_CHECKER_JOB_CONCURRENCY, async (job) => {
+        const address = job.data.address;
+        const lamports = await this.solana.getBalance(new PublicKey(address));
 
-      return new BN(lamports).toString();
-    });
+        await this.accountsService.updateBalance(address, lamports);
 
-    queue.on('ready', () => {
-      this.logger.log(`Queue is ready`);
-    });
+        return new BN(lamports).toString();
+      });
 
-    queue.on('error', (err) => {
-      this.logger.error(err.message);
-    });
+      queue.on('ready', () => {
+        this.logger.log(`Queue is ready`);
+      });
 
-    queue.on('job succeeded', (jobId, result) => {
-      this.logger.debug(`Job succeeded id=${jobId} balance=${result}`);
-    });
+      queue.on('error', (err) => {
+        this.logger.error(err.message);
+      });
 
-    queue.on('job retrying', (jobId, error) => {
-      this.logger.debug(
-        `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
-      );
-    });
+      queue.on('job succeeded', (jobId, result) => {
+        this.logger.debug(`Job succeeded id=${jobId} balance=${result}`);
+      });
 
-    queue.on('job failed', (jobId, error) => {
-      this.logger.error(
-        `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
-      );
-    });
+      queue.on('job retrying', (jobId, error) => {
+        this.logger.debug(
+          `Job retrying id=${jobId} err=${JSON.stringify(error.message)}`,
+        );
+      });
 
-    queue.on('job progress', (jobId, progress) => {
-      this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
-    });
+      queue.on('job failed', (jobId, error) => {
+        this.logger.error(
+          `Job failed id=${jobId} err=${JSON.stringify(error.message)}`,
+        );
+      });
 
-    this.queue = queue;
+      queue.on('job progress', (jobId, progress) => {
+        this.logger.debug(`Job progress id=${jobId} progress=${progress}`);
+      });
+
+      this.queue = queue;
+    }
   }
 
   async onModuleInit() {
