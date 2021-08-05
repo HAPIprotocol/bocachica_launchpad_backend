@@ -73,8 +73,9 @@ export class TicketsService {
     return this.ticketRepo.save(ticket);
   }
 
-  async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
+  async findAll(publicKey: string, skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
     const [list, total] = await this.ticketRepo.findAndCount({
+      where: { publicKey },
       order: { id: 'ASC' },
       skip: skip > 0 ? skip : 0,
       take,
