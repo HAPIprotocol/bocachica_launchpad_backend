@@ -20,7 +20,7 @@ COPY --from=builder /build/package-lock.json ./
 
 RUN npm install --production
 
-EXPOSE 3000
+EXPOSE 3001
 
 USER node
 
