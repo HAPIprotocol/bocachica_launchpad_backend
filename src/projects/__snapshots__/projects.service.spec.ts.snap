@@ -13,6 +13,7 @@ Object {
         "projectId": 1,
         "targetAmount": "0",
       },
+      "decimals": 9,
       "id": 1,
       "title": "top project",
     },

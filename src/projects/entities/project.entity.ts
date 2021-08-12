@@ -44,6 +44,16 @@ export class Project {
   })
   smartContractUrl: string;
 
+  @Column({ type: 'bigint', default: 0, nullable: true })
+  @ApiPropertyOptional({
+    example: '1000000000.0000000',
+  })
+  totalSupply: string;
+
+  @Column({ type: 'int', default: 9 })
+  @ApiProperty({ example: 9 })
+  decimals = 9;
+
   @Column({ nullable: true })
   @ApiPropertyOptional({
     example: 'https://www.mylittleproject.example',

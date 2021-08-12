@@ -7,7 +7,12 @@ import { cpus } from 'os';
 import { cluster, ProcessType, setProcessType } from './cluster';
 import { AppModule } from './app.module';
 import { WorkerModule } from './worker.module';
-import { CORS_ORIGINS, PROCESS_RESPAWN_INTERVAL } from './config';
+import {
+  APP_PORT,
+  CORS_ORIGINS,
+  MAX_APP_PROCESSES,
+  PROCESS_RESPAWN_INTERVAL,
+} from './config';
 import { LoggingInterceptor } from './common/logging.interceptor';
 import { flobj } from './common/string';
 
@@ -17,6 +22,10 @@ if (cluster.isMaster) {
   logger.log(`Master process started with PID ${process.pid}`);
 
   let numCPUs = cpus().length;
+
+  if (MAX_APP_PROCESSES > 0 && numCPUs > MAX_APP_PROCESSES) {
+    numCPUs = MAX_APP_PROCESSES;
+  }
 
   // Spawn at least one worker
   spawnWorker();
@@ -95,7 +104,7 @@ async function webBootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3001);
+  await app.listen(APP_PORT);
 }
 
 async function workerBootstrap() {

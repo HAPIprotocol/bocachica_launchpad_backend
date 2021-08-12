@@ -7,8 +7,8 @@ import {
 import { Connection, PublicKey } from '@solana/web3.js';
 import * as Queue from 'bee-queue';
 import * as BN from 'bn.js';
-import { getProcessType, ProcessType } from 'src/cluster';
 
+import { getProcessType, ProcessType } from '../cluster';
 import {
   BALANCE_CHECKER_JOB_CONCURRENCY,
   QUEUE_REDIS_URL,

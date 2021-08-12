@@ -321,4 +321,12 @@ export class ProjectsService {
 
     return round;
   }
+
+  async updateTotalSupply(id: number, lamports: string) {
+    await this.projectRepo.update({ id }, { totalSupply: lamports });
+  }
+
+  async projectsToUpdateTotalSupply(): Promise<Project[]> {
+    return this.projectRepo.find();
+  }
 }

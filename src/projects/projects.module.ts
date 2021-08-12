@@ -11,6 +11,7 @@ import { ProjectRound } from './entities/project-round.entity';
 import { ProjectContribution } from './entities/project-contribution.entity';
 import { ContribCheckerService } from './contrib-checker.service';
 import { TicketsModule } from '../tickets/tickets.module';
+import { TotalSupplyCheckerService } from './total-supply-checker.service';
 
 @Module({
   imports: [
@@ -25,6 +26,10 @@ import { TicketsModule } from '../tickets/tickets.module';
     TicketsModule,
   ],
   controllers: [ProjectsController],
-  providers: [ProjectsService, ContribCheckerService],
+  providers: [
+    ProjectsService,
+    ContribCheckerService,
+    TotalSupplyCheckerService,
+  ],
 })
 export class ProjectsModule {}

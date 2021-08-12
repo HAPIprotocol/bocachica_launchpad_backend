@@ -53,6 +53,10 @@ export const DEFAULT_ITEMS_PER_PAGE = env
 
 export const CORS_ORIGINS = env.get('CORS_ORIGINS').default('').asArray();
 
+export const APP_PORT = env.get('APP_PORT').default(3001).asPortNumber();
+
+export const MAX_APP_PROCESSES = env.get('MAX_APP_PROCESSES').asIntPositive();
+
 export const QUEUE_REDIS_URL = env
   .get('QUEUE_REDIS_URL')
   .required(true)
@@ -62,6 +66,11 @@ export const QUEUE_REDIS_URL = env
 export const BALANCE_CHECKER_JOB_CONCURRENCY = env
   .get('BALANCE_CHECKER_JOB_CONCURRENCY')
   .default(10)
+  .asIntPositive();
+
+export const TOTAL_SUPPLY_CHECKER_JOB_CONCURRENCY = env
+  .get('TOTAL_SUPPLY_CHECKER_JOB_CONCURRENCY')
+  .default(1)
   .asIntPositive();
 
 export const SOLANA_ENDPOINT_URL = env

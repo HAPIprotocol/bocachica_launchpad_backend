@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 import {
   Column,
   Entity,
@@ -33,6 +34,10 @@ export class ProjectRound {
   @Column()
   @ApiProperty({ example: 101 })
   projectId: number;
+
+  @Column({ nullable: true })
+  @ApiPropertyOptional({ example: 2 })
+  projectIndex?: number;
 
   @Column({ type: 'enum', enum: ProjectRoundStatus })
   @ApiProperty({ example: ProjectRoundStatus.Active, enum: ProjectRoundStatus })
