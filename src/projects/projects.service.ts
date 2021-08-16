@@ -102,11 +102,14 @@ export class ProjectsService {
 
     let total = new BN(amount || 0);
 
+    const tokenAddress = await round.tokenAddress();
+
     if (amount !== undefined && amount > 0) {
       this.logger.verbose(
         `Historical round contributions ${flobj({
           roundId: round.id,
           address: round.address,
+          tokenAddress: tokenAddress.toString(),
           amount,
         })}`,
       );
@@ -122,6 +125,7 @@ export class ProjectsService {
         `Latest contribution ${flobj({
           roundId: round.id,
           address: round.address,
+          tokenAddress: tokenAddress.toString(),
           blocknumber: latestContrib.blocknumber,
           timestamp: latestContrib.timestamp.toISOString(),
         })}`,

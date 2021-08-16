@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import * as Queue from 'bee-queue';
-import { PublicKey } from '@solana/web3.js';
 import { CronJob } from 'cron';
 
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
@@ -147,24 +146,26 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
 
     const rounds = await this.projectsService.getActiveRounds();
     for (const round of rounds) {
+      const tokenAddress = await round.tokenAddress();
+
       this.logger.log(
         `Subscribing to round address updated ${flobj({
           roundId: round.id,
           address: round.address,
+          tokenAddress: tokenAddress.toString(),
         })}`,
       );
-      const subId = this.web3.onAccountChange(
-        new PublicKey(round.address),
-        async () => {
-          this.logger.log(
-            `Round address updated ${flobj({
-              roundId: round.id,
-              address: round.address,
-            })}`,
-          );
-          await this.updateRoundContribution(round.id);
-        },
-      );
+
+      const subId = this.web3.onAccountChange(tokenAddress, async () => {
+        this.logger.log(
+          `Round address updated ${flobj({
+            roundId: round.id,
+            address: round.address,
+            tokenAddress: tokenAddress.toString(),
+          })}`,
+        );
+        await this.updateRoundContribution(round.id);
+      });
       this.roundSubs.push(subId);
     }
   }
