@@ -13,6 +13,7 @@ import * as nacl from 'tweetnacl';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
+import { flobj } from '../common/string';
 
 @Injectable()
 export class TicketsService {
@@ -23,14 +24,16 @@ export class TicketsService {
   ) {}
 
   async create(createTicketDto: CreateTicketDto) {
-    let ticket = await this.ticketRepo.findOne({
-      where: {
-        projectId: createTicketDto.projectId,
-        publicKey: createTicketDto.publicKey,
-      },
-    });
+    const where = {
+      projectId: createTicketDto.projectId,
+      roundId: createTicketDto.roundId,
+      publicKey: createTicketDto.publicKey,
+    };
+
+    let ticket = await this.ticketRepo.findOne({ where });
 
     if (ticket) {
+      this.logger.verbose(`Ticket already exists ${flobj({ ...where })}`);
       return ticket;
     }
 
