@@ -160,6 +160,18 @@ export class ProjectsService {
         const txHash = transfer.txhash;
         let publicKey: string;
 
+        if (transfer.mint.address != round.smartcontractAddress) {
+          this.logger.debug(
+            `Irrelevant mint address ${flobj({
+              roundId: round.id,
+              mint: transfer.mint.address,
+              address: round.smartcontractAddress,
+              tokenAccount,
+            })}`,
+          );
+          continue;
+        }
+
         try {
           const data = await this.web3.getParsedAccountInfo(
             new PublicKey(tokenAccount),
