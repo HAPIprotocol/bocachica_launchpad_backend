@@ -1,4 +1,5 @@
 import {
+  forwardRef,
   Inject,
   Injectable,
   Logger,
@@ -28,6 +29,7 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
   private roundSubs: number[] = [];
 
   constructor(
+    @Inject(forwardRef(() => ProjectsService))
     private readonly projectsService: ProjectsService,
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,

@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindConditions, In, Not, Repository } from 'typeorm';
 import { ParsedAccountData, PublicKey } from '@solana/web3.js';
@@ -35,6 +41,7 @@ export class ProjectsService {
     private readonly ticketsService: TicketsService,
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
+    @Inject(forwardRef(() => ContribCheckerService))
     private readonly contribChecker: ContribCheckerService,
   ) {}
 
