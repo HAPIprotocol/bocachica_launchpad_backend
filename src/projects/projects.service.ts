@@ -177,7 +177,7 @@ export class ProjectsService {
       if (
         transfers[0] &&
         latestContrib &&
-        transfers[0].blocknumber >= latestContrib.blocknumber
+        transfers[0].blocknumber <= latestContrib.blocknumber
       ) {
         this.logger.debug(
           `Reached historic data ${flobj({

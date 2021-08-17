@@ -1,18 +1,25 @@
 import {
+  Body,
   Controller,
   DefaultValuePipe,
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Query,
 } from '@nestjs/common';
 import {
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
+import {
+  ContributeToProjectDto,
+  ContributeToProjectResponseDto,
+} from './dto/contribute-to-project.dto';
 import { FindAllProjectsResultDto } from './dto/find-all-projects.dto';
 import { FindAllRoundsResultDto } from './dto/find-all-rounds.dto';
 import { FindOneProjectResultDto } from './dto/find-one-project.dto';
@@ -28,6 +35,19 @@ import { ProjectsService } from './projects.service';
 @ApiTags('Projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
+
+  @Post('contribute')
+  @ApiCreatedResponse({
+    description: 'Contribution acknowledged',
+    type: ContributeToProjectResponseDto,
+  })
+  async contribute(
+    @Body() contributeDto: ContributeToProjectDto,
+  ): Promise<ContributeToProjectResponseDto> {
+    const { txHash, roundId } = contributeDto;
+
+    return { acknowledged: true };
+  }
 
   @Get()
   @ApiOkResponse({
