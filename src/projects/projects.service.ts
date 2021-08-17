@@ -399,7 +399,7 @@ export class ProjectsService {
   async reportContribution(txHash: string, roundId: number): Promise<void> {
     try {
       await this.roundRepo.findOneOrFail({ id: roundId }, { cache: 60000 });
-      await this.web3.confirmTransaction(txHash, 'confirmed');
+      await this.web3.getTransaction(txHash, { commitment: 'confirmed' });
       await this.contribChecker.updateRoundContribution(roundId);
     } catch (error) {
       this.logger.warn(

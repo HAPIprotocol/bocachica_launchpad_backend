@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBase64, IsInt, IsPositive } from 'class-validator';
+import { IsInt, IsPositive, IsString } from 'class-validator';
 
 export class ContributeToProjectDto {
   @ApiProperty({ type: Number })
@@ -8,7 +8,7 @@ export class ContributeToProjectDto {
   roundId: number;
 
   @ApiProperty({ type: String })
-  @IsBase64()
+  @IsString()
   txHash: string;
 }
 
