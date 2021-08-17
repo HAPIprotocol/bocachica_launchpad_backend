@@ -116,15 +116,9 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(
       `Checking round contributions ${flobj({ count: rounds.length })}`,
     );
-    for (const round of rounds) {
-      this.logger.verbose(
-        `Checking round contributions ${flobj({
-          roundId: round.id,
-          address: round.address,
-        })}`,
-      );
-      await this.updateRoundContribution(round.id);
-    }
+    return Promise.all(
+      rounds.map((round) => this.updateRoundContribution(round.id)),
+    );
   }
 
   async subscribeForRounds() {
@@ -146,27 +140,36 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
 
     const rounds = await this.projectsService.getActiveRounds();
     for (const round of rounds) {
-      const tokenAddress = await round.tokenAddress();
+      try {
+        const tokenAddress = await round.tokenAddress();
 
-      this.logger.log(
-        `Subscribing to round address updated ${flobj({
-          roundId: round.id,
-          address: round.address,
-          tokenAddress: tokenAddress.toString(),
-        })}`,
-      );
-
-      const subId = this.web3.onAccountChange(tokenAddress, async () => {
         this.logger.log(
-          `Round address updated ${flobj({
+          `Subscribing to round address updated ${flobj({
             roundId: round.id,
             address: round.address,
             tokenAddress: tokenAddress.toString(),
           })}`,
         );
-        await this.updateRoundContribution(round.id);
-      });
-      this.roundSubs.push(subId);
+
+        const subId = this.web3.onAccountChange(tokenAddress, async () => {
+          this.logger.log(
+            `Round address updated ${flobj({
+              roundId: round.id,
+              address: round.address,
+              tokenAddress: tokenAddress.toString(),
+            })}`,
+          );
+          await this.updateRoundContribution(round.id);
+        });
+        this.roundSubs.push(subId);
+      } catch (err) {
+        this.logger.error(
+          `Could not subscribe to round address: ${flobj({
+            roundId: round.id,
+            err: err.toString(),
+          })}`,
+        );
+      }
     }
   }
 

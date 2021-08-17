@@ -94,6 +94,16 @@ export class ProjectsService {
   }
 
   async fetchContributions(round: ProjectRound): Promise<{ total: string }> {
+    const tokenAddress = await round.tokenAddress();
+
+    this.logger.verbose(
+      `Checking round contributions ${flobj({
+        roundId: round.id,
+        address: round.address,
+        tokenAddress: tokenAddress.toString(),
+      })}`,
+    );
+
     const { amount } = await this.contribRepo
       .createQueryBuilder()
       .select('SUM(amount)', 'amount')
@@ -101,8 +111,6 @@ export class ProjectsService {
       .getRawOne();
 
     let total = new BN(amount || 0);
-
-    const tokenAddress = await round.tokenAddress();
 
     if (amount !== undefined && amount > 0) {
       this.logger.verbose(
@@ -137,17 +145,32 @@ export class ProjectsService {
 
     while (true) {
       const transfers = await this.solanabeach.getTokenTransfers(
-        round.address,
+        tokenAddress.toString(),
         limit,
         offset,
+        undefined,
+        false,
       );
 
       if (!transfers.length) {
+        this.logger.debug(
+          `Empty transfers page ${flobj({
+            roundId: round.id,
+            tokenAddress: tokenAddress.toString(),
+            limit,
+            offset,
+          })}`,
+        );
         break;
       }
 
       this.logger.verbose(
-        `Found transfers ${flobj({ count: transfers.length })}`,
+        `Found transfers ${flobj({
+          roundId: round.id,
+          count: transfers.length,
+          offset,
+          tokenAddress: tokenAddress.toString(),
+        })}`,
       );
 
       // Historic data?
@@ -156,6 +179,16 @@ export class ProjectsService {
         latestContrib &&
         transfers[0].blocknumber >= latestContrib.blocknumber
       ) {
+        this.logger.debug(
+          `Reached historic data ${flobj({
+            roundId: round.id,
+            offset,
+            limit,
+            tokenAddress: tokenAddress.toString(),
+            transferBlocknumber: transfers[0].blocknumber,
+            latestBlocknumber: latestContrib.blocknumber,
+          })}`,
+        );
         break;
       }
 
@@ -232,6 +265,14 @@ export class ProjectsService {
 
       // Last page?
       if (transfers.length < limit) {
+        this.logger.debug(
+          `Reached last transfers page ${flobj({
+            roundId: round.id,
+            tokenAddress: tokenAddress.toString(),
+            limit,
+            offset,
+          })}`,
+        );
         break;
       }
 
