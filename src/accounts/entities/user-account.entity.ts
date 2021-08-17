@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 import { StakeAccount } from './stake-account.entity';
 
 @Entity()
+@Index(['publicKey'])
 export class UserAccount {
   @PrimaryGeneratedColumn()
   id: number;

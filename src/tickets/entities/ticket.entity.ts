@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
+@Index(['publicKey'])
+@Index(['projectId', 'roundId'])
 export class Ticket {
   @PrimaryGeneratedColumn()
   @ApiProperty({ example: 1 })

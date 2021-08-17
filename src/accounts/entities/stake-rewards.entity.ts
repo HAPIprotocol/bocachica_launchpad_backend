@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 import { StakeAccount } from './stake-account.entity';
 
 @Entity()
+@Index(['epoch'])
 export class StakeReward {
   @PrimaryGeneratedColumn()
   id: number;

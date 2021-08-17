@@ -9,6 +9,7 @@ import { PublicKey } from '@solana/web3.js';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -32,6 +33,7 @@ export enum ProjectRoundAllocationType {
 }
 
 @Entity()
+@Index(['status', 'accessType', 'currency', 'name', 'allocationType'])
 export class ProjectRound {
   @PrimaryGeneratedColumn()
   @ApiProperty({ example: 1 })
