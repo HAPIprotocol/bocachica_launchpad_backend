@@ -18,6 +18,7 @@ import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { flobj } from '../common/string';
 import { TicketsService } from '../tickets/tickets.service';
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
+import { ContribCheckerService } from './contrib-checker.service';
 
 @Injectable()
 export class ProjectsService {
@@ -34,6 +35,7 @@ export class ProjectsService {
     private readonly ticketsService: TicketsService,
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
+    private readonly contribChecker: ContribCheckerService,
   ) {}
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
@@ -385,5 +387,20 @@ export class ProjectsService {
 
   async projectsToUpdateTotalSupply(): Promise<Project[]> {
     return this.projectRepo.find();
+  }
+
+  async reportContribution(txHash: string, roundId: number): Promise<void> {
+    try {
+      await this.web3.confirmTransaction(txHash, 'finalized');
+      await this.contribChecker.updateRoundContribution(roundId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to report contribution ${flobj({
+          txHash,
+          roundId,
+          error: error.toString(),
+        })}`,
+      );
+    }
   }
 }

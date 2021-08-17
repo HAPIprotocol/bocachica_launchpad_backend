@@ -46,7 +46,12 @@ export class ProjectsController {
   ): Promise<ContributeToProjectResponseDto> {
     const { txHash, roundId } = contributeDto;
 
-    return { acknowledged: true };
+    try {
+      await this.projectsService.reportContribution(txHash, roundId);
+      return { acknowledged: true };
+    } catch (_) {
+      return { acknowledged: false };
+    }
   }
 
   @Get()

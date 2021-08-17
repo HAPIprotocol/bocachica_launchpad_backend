@@ -14,8 +14,10 @@ import { ProjectsService } from './projects.service';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { TicketsService } from '../tickets/tickets.service';
+import { ContribCheckerService } from './contrib-checker.service';
 
 jest.mock('../solanabeach/solanabeach.service');
+jest.mock('./contrib-checker.service');
 
 describe('ProjectsService', () => {
   let projectsService: ProjectsService;
@@ -40,6 +42,7 @@ describe('ProjectsService', () => {
       providers: [
         TicketsService,
         ProjectsService,
+        ContribCheckerService,
         projectProvider,
         projectContribProvider,
         projectRoundProvider,
@@ -156,12 +159,13 @@ describe('ProjectsService', () => {
   });
 
   describe('fetchContributions', () => {
-    it('should fetcn contributions', async () => {
+    it('should fetch contributions', async () => {
       const ROUND = Object.assign(new ProjectRound(), {
         id: 1,
         projectId: 101,
-        address: '9AGQDaDvEruNVTmL9HzEE4f8NMMMbfvm9rB6wABWGCc8',
+        address: '4eXrH9rsrfYD3ySYJTLPynBZgsV9Vsaq2JJbh5aEy3Cq',
         timestamp: new Date('2021-07-29'),
+        smartcontractAddress: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
       });
 
       jest
@@ -178,7 +182,10 @@ describe('ProjectsService', () => {
               'gXHFaSGt2JGp7fydRV29a2PmHv9DmdwsKLAYNnp5zpW19uRHRRUJc5EdVMhEFDoFotgrJQ1wrsDTQahB2ezTKRN',
             source: { address: 'Fnnxd8to7JYEAhNSuBA9GS1v5MrHnEvGVCNMszemHabr' },
             destination: {
-              address: '9AGQDaDvEruNVTmL9HzEE4f8NMMMbfvm9rB6wABWGCc8',
+              address: '4eXrH9rsrfYD3ySYJTLPynBZgsV9Vsaq2JJbh5aEy3Cq',
+            },
+            mint: {
+              address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
             },
             valid: true,
             timestamp: { absolute: 1627569141000, relative: 1627569141000 },
