@@ -87,11 +87,22 @@ export class ProjectsService {
   }
 
   async getContrib(publicKey: string, roundId: number) {
+    const round = await this.roundRepo.findOne({ id: roundId });
+
     const { amount } = await this.contribRepo
       .createQueryBuilder()
       .select('SUM(amount)', 'amount')
       .where({ publicKey, roundId })
       .getRawOne();
+
+    if (amount < round.minAmount) {
+      return 0;
+    }
+
+    if (!round.solPowerScaling && amount > round.maxAmount) {
+      return round.maxAmount;
+    }
+
     return amount;
   }
 
