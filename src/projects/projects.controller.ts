@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheTTL,
   Controller,
   DefaultValuePipe,
   Get,
@@ -30,6 +31,8 @@ import {
   ProjectRoundStatus,
 } from './entities/project-round.entity';
 import { ProjectsService } from './projects.service';
+
+export const ROUNDS_CACHE_TTL = 5;
 
 @Controller('projects')
 @ApiTags('Projects')
@@ -84,6 +87,7 @@ export class ProjectsController {
   }
 
   @Get('rounds')
+  @CacheTTL(ROUNDS_CACHE_TTL)
   @ApiOkResponse({
     description: 'Get round list',
     type: FindAllRoundsResultDto,

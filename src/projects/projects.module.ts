@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Web3Module } from '../web3/web3.module';
@@ -15,6 +15,7 @@ import { TotalSupplyCheckerService } from './total-supply-checker.service';
 
 @Module({
   imports: [
+    CacheModule.register({ max: 500 }),
     TypeOrmModule.forFeature([
       Project,
       ProjectPartner,
