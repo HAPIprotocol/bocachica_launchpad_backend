@@ -25,6 +25,7 @@ import { flobj } from '../common/string';
 import { TicketsService } from '../tickets/tickets.service';
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { ContribCheckerService } from './contrib-checker.service';
+import { collectedAmountSql } from './projects.sql';
 
 @Injectable()
 export class ProjectsService {
@@ -299,15 +300,13 @@ export class ProjectsService {
       offset += limit;
     }
 
-    await this.roundRepo.update(
-      { id: round.id },
-      { collectedAmount: total.toString() },
-    );
+    const collectedAmount = await this.updateCollectedAmount(round.id);
 
     this.logger.log(
       `Fetched round contributions ${flobj({
         roundId: round.id,
         total: total.toString(),
+        collectedAmount,
       })}`,
     );
 
@@ -421,5 +420,15 @@ export class ProjectsService {
         })}`,
       );
     }
+  }
+
+  async updateCollectedAmount(roundId: number) {
+    const [row] = await this.roundRepo.query(collectedAmountSql, [roundId]);
+
+    const { amount } = row;
+
+    await this.roundRepo.update({ id: roundId }, { collectedAmount: amount });
+
+    return amount;
   }
 }

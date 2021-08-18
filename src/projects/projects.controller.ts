@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheInterceptor,
   CacheTTL,
   Controller,
   DefaultValuePipe,
@@ -8,6 +9,7 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
@@ -34,6 +36,7 @@ import { ProjectsService } from './projects.service';
 
 export const ROUNDS_CACHE_TTL = 5;
 
+@UseInterceptors(CacheInterceptor)
 @Controller('projects')
 @ApiTags('Projects')
 export class ProjectsController {
