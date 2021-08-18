@@ -93,6 +93,10 @@ export class ProjectRound {
   @ApiProperty({ example: true })
   solPowerScaling: boolean;
 
+  @Column({ default: true })
+  @ApiProperty({ example: true })
+  solPowerCheck: boolean;
+
   @Column()
   @ApiProperty({ example: 'SOL' })
   currency: string;

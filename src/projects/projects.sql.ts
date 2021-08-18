@@ -8,8 +8,9 @@ export const collectedAmountSql = `
       "publicKey",
       "amount",
       case
-        when "solPowerScaling" = true then "solPower" between "minAmount" * "solPowerRate" and "maxAmount" * "solPowerRate"
-        else "solPower" > 0
+        when "solPowerCheck" = true and "solPowerScaling" = true then "solPower" between "minAmount" * "solPowerRate" and "maxAmount" * "solPowerRate"
+        when "solPowerCheck" = true then "solPower" > 0
+        else true
       end as "allowed"
     from
       (
