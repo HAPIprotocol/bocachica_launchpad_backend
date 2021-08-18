@@ -35,6 +35,7 @@ import {
 import { ProjectsService } from './projects.service';
 
 export const ROUNDS_CACHE_TTL = 5;
+export const ROUND_CONTRIBUTION_TTL = 1;
 
 @UseInterceptors(CacheInterceptor)
 @Controller('projects')
@@ -77,6 +78,7 @@ export class ProjectsController {
   }
 
   @Get('roundContribution')
+  @CacheTTL(ROUND_CONTRIBUTION_TTL)
   @ApiOkResponse({
     description: 'Get round contribution for public key',
     type: GetRoundContributionDto,

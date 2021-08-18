@@ -96,11 +96,11 @@ export class ProjectsService {
       .where({ publicKey, roundId })
       .getRawOne();
 
-    if (amount < round.minAmount) {
+    if (Number(amount) < Number(round.minAmount)) {
       return 0;
     }
 
-    if (!round.solPowerScaling && amount > round.maxAmount) {
+    if (!round.solPowerScaling && Number(amount) > Number(round.maxAmount)) {
       return round.maxAmount;
     }
 
