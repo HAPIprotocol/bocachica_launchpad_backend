@@ -32,7 +32,8 @@ export const collectedAmountSql = `
         "minAmount",
         "maxAmount",
         "solPowerRate",
-        "solPowerScaling"
+        "solPowerScaling",
+        "solPowerCheck"
       from
         "project_round") pr on
       contrib."roundId" = pr."id") t
