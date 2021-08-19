@@ -35,7 +35,7 @@ Object {
 }
 `;
 
-exports[`ProjectsService getContrib should get round contribution 1`] = `10`;
+exports[`ProjectsService getContrib should get round contribution 1`] = `"0"`;
 
 exports[`ProjectsService getRoundInfo should get round info 1`] = `
 ProjectRound {

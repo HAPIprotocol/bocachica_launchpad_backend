@@ -1,3 +1,4 @@
+import { CacheModule } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { ProjectsController } from './projects.controller';
@@ -13,6 +14,7 @@ describe('ProjectsController', () => {
     jest.resetAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [ProjectsController],
       providers: [ProjectsService],
     }).compile();
