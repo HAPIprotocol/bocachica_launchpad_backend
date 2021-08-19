@@ -16,6 +16,7 @@ import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { TicketsService } from '../tickets/tickets.service';
 import { ContribCheckerService } from './contrib-checker.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 jest.mock('../solanabeach/solanabeach.service');
 jest.mock('./contrib-checker.service');
@@ -39,7 +40,12 @@ describe('ProjectsService', () => {
     ticketProvider = mockEntityProvider(Ticket);
 
     const module: TestingModule = await Test.createTestingModule({
-      imports: [Web3Module, SolanabeachModule, CacheModule.register()],
+      imports: [
+        Web3Module,
+        SolanabeachModule,
+        CacheModule.register(),
+        ScheduleModule.forRoot(),
+      ],
       providers: [
         TicketsService,
         ProjectsService,
