@@ -388,7 +388,7 @@ export class ProjectsService {
   async findOneRound(id: number) {
     const round = await this.roundRepo.findOne({
       where: { id },
-      relations: ['project'],
+      relations: ['project', 'project.partners'],
     });
 
     if (!round) {
