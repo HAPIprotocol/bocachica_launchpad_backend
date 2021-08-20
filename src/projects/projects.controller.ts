@@ -28,6 +28,7 @@ import { FindAllRoundsResultDto } from './dto/find-all-rounds.dto';
 import { FindOneProjectResultDto } from './dto/find-one-project.dto';
 import { FindOneRoundResultDto } from './dto/find-one-round.dto';
 import { GetRoundContributionDto } from './dto/get-round-contribution.dto';
+import { IsWhitelistedResponseDto } from './dto/is-whitelisted.dto';
 import {
   ProjectRoundAccessType,
   ProjectRoundStatus,
@@ -36,6 +37,7 @@ import { ProjectsService } from './projects.service';
 
 export const ROUNDS_CACHE_TTL = 5;
 export const ROUND_CONTRIBUTION_TTL = 1;
+export const WHITELIST_CACHE_TTL = 60;
 
 @UseInterceptors(CacheInterceptor)
 @Controller('projects')
@@ -145,6 +147,29 @@ export class ProjectsController {
       publicKey,
       query,
     });
+  }
+
+  @Get('round/:id/isWhitelisted')
+  @CacheTTL(WHITELIST_CACHE_TTL)
+  @ApiOkResponse({
+    description: 'Whether a public key is whitelisted in the round',
+    type: IsWhitelistedResponseDto,
+  })
+  @ApiNotFoundResponse({ status: 404, description: 'Not found' })
+  @ApiQuery({
+    name: 'publicKey',
+    type: String,
+    required: true,
+  })
+  async isWhitelisted(
+    @Param('id') roundId: string,
+    @Query('publicKey') publicKey?: string,
+  ): Promise<IsWhitelistedResponseDto> {
+    const isWhitelisted = await this.projectsService.isWhitelisted(
+      Number(roundId),
+      publicKey,
+    );
+    return { isWhitelisted };
   }
 
   @Get('round/:id')

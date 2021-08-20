@@ -12,8 +12,10 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ProjectParticipant } from './project-participant.entity';
 import { Project } from './project.entity';
 
 export enum ProjectRoundStatus {
@@ -134,6 +136,10 @@ export class ProjectRound {
   @ManyToOne(() => Project, (project) => project.rounds)
   @JoinColumn({ name: 'projectId' })
   project: Project;
+
+  @OneToMany(() => ProjectParticipant, (participant) => participant.round)
+  @JoinColumn({ name: 'roundId' })
+  participants: ProjectParticipant[];
 
   async tokenAddress() {
     return Token.getAssociatedTokenAddress(

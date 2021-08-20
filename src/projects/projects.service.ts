@@ -30,6 +30,7 @@ import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { ContribCheckerService } from './contrib-checker.service';
 import { collectedAmountSql } from './projects.sql';
 import { getProcessType, ProcessType } from '../cluster';
+import { ProjectParticipant } from './entities/project-participant.entity';
 
 @Injectable()
 export class ProjectsService implements OnModuleInit {
@@ -40,6 +41,8 @@ export class ProjectsService implements OnModuleInit {
     @InjectRepository(ProjectContribution)
     private contribRepo: Repository<ProjectContribution>,
     @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
+    @InjectRepository(ProjectParticipant)
+    private participantRepo: Repository<ProjectParticipant>,
     private readonly solanabeach: SolanabeachService,
     private readonly ticketsService: TicketsService,
     @Inject(WEB3_CONNECTION)
@@ -505,5 +508,18 @@ export class ProjectsService implements OnModuleInit {
       round.status = ProjectRoundStatus.Finished;
       await this.roundRepo.save(round);
     }
+  }
+
+  async isWhitelisted(roundId: number, publicKey: string): Promise<boolean> {
+    const participant = await this.participantRepo.findOne({
+      roundId,
+      publicKey,
+    });
+
+    if (!participant) {
+      throw new NotFoundException();
+    }
+
+    return true;
   }
 }

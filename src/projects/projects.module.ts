@@ -12,6 +12,7 @@ import { ProjectContribution } from './entities/project-contribution.entity';
 import { ContribCheckerService } from './contrib-checker.service';
 import { TicketsModule } from '../tickets/tickets.module';
 import { TotalSupplyCheckerService } from './total-supply-checker.service';
+import { ProjectParticipant } from './entities/project-participant.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TotalSupplyCheckerService } from './total-supply-checker.service';
       ProjectPartner,
       ProjectRound,
       ProjectContribution,
+      ProjectParticipant,
     ]),
     Web3Module,
     SolanabeachModule,
