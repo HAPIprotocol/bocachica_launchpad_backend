@@ -117,6 +117,10 @@ export class ProjectRound {
   })
   smartcontractAddress?: string;
 
+  @Column({ nullable: true })
+  @ApiPropertyOptional({ example: 'https://example.net/icon.png' })
+  tokenIcon: string;
+
   @Column({ type: 'decimal', default: 1 })
   @ApiProperty({ example: 1 })
   emissionRatio: number;
