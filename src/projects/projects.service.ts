@@ -4,19 +4,22 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindConditions, In, Not, Repository } from 'typeorm';
+import { FindConditions, In, Not, Raw, Repository } from 'typeorm';
 import { ParsedAccountData, PublicKey } from '@solana/web3.js';
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import * as BN from 'bn.js';
+import { CronJob } from 'cron';
 
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
 import { ProjectContribution } from './entities/project-contribution.entity';
 import { ProjectWithCurrentRound } from './dto/find-all-projects.dto';
-import { ProjectPartner } from './entities/project-partner.entity';
 import {
   ProjectRound,
   ProjectRoundAccessType,
+  ProjectRoundAllocationType,
   ProjectRoundStatus,
 } from './entities/project-round.entity';
 import { Project } from './entities/project.entity';
@@ -26,9 +29,10 @@ import { TicketsService } from '../tickets/tickets.service';
 import { Web3Connection, WEB3_CONNECTION } from '../web3/web3.module';
 import { ContribCheckerService } from './contrib-checker.service';
 import { collectedAmountSql } from './projects.sql';
+import { getProcessType, ProcessType } from '../cluster';
 
 @Injectable()
-export class ProjectsService {
+export class ProjectsService implements OnModuleInit {
   private readonly logger = new Logger(ProjectsService.name);
 
   constructor(
@@ -36,15 +40,40 @@ export class ProjectsService {
     @InjectRepository(ProjectContribution)
     private contribRepo: Repository<ProjectContribution>,
     @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
-    @InjectRepository(ProjectPartner)
-    private partnerRepo: Repository<ProjectPartner>,
     private readonly solanabeach: SolanabeachService,
     private readonly ticketsService: TicketsService,
     @Inject(WEB3_CONNECTION)
     private readonly web3: Web3Connection,
     @Inject(forwardRef(() => ContribCheckerService))
     private readonly contribChecker: ContribCheckerService,
+    private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
+
+  onModuleInit() {
+    if (getProcessType() === ProcessType.Worker) {
+      {
+        this.logger.log(`Starting cron job triggerRoundsByTime`);
+
+        const job = new CronJob(CronExpression.EVERY_10_SECONDS, async () => {
+          await this.triggerRoundsByTime();
+        });
+
+        this.schedulerRegistry.addCronJob('triggerRoundsByTime', job);
+        job.start();
+      }
+
+      {
+        this.logger.log(`Starting cron job triggerRoundsByAmount`);
+
+        const job = new CronJob(CronExpression.EVERY_10_SECONDS, async () => {
+          await this.triggerRoundsByAmount();
+        });
+
+        this.schedulerRegistry.addCronJob('triggerRoundsByAmount', job);
+        job.start();
+      }
+    }
+  }
 
   async findAll(skip = 0, take = DEFAULT_ITEMS_PER_PAGE) {
     const [list, total] = await this.projectRepo.findAndCount({
@@ -430,5 +459,51 @@ export class ProjectsService {
     await this.roundRepo.update({ id: roundId }, { collectedAmount: amount });
 
     return amount;
+  }
+
+  async triggerRoundsByAmount() {
+    const rounds = await this.roundRepo.find({
+      where: {
+        status: ProjectRoundStatus.Active,
+        allocationType: ProjectRoundAllocationType.Amount,
+        targetAmount: Raw((col) => `${col} < "collectedAmount"`),
+      },
+    });
+
+    for (const round of rounds) {
+      this.logger.log(
+        `Round has reached the target amount ${flobj({
+          roundId: round.id,
+          targetAmount: round.targetAmount,
+          collectedAmount: round.collectedAmount,
+        })}`,
+      );
+
+      round.status = ProjectRoundStatus.Finished;
+
+      await this.roundRepo.save(round);
+    }
+  }
+
+  async triggerRoundsByTime() {
+    const rounds = await this.roundRepo.find({
+      where: {
+        status: ProjectRoundStatus.Active,
+        endDate: Raw((col) => `${col} < NOW()`),
+      },
+    });
+
+    for (const round of rounds) {
+      this.logger.log(
+        `Round has reached the end date ${flobj({
+          roundId: round.id,
+          targetAmount: round.targetAmount,
+          collectedAmount: round.collectedAmount,
+          endDate: round.endDate.toString(),
+        })}`,
+      );
+      round.status = ProjectRoundStatus.Finished;
+      await this.roundRepo.save(round);
+    }
   }
 }

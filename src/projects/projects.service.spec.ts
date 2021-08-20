@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CacheModule } from '@nestjs/common';
 
 import { Web3Module } from '../web3/web3.module';
 import { SolanabeachModule } from '../solanabeach/solanabeach.module';
@@ -15,6 +16,7 @@ import { SolanabeachService } from '../solanabeach/solanabeach.service';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { TicketsService } from '../tickets/tickets.service';
 import { ContribCheckerService } from './contrib-checker.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 jest.mock('../solanabeach/solanabeach.service');
 jest.mock('./contrib-checker.service');
@@ -38,7 +40,12 @@ describe('ProjectsService', () => {
     ticketProvider = mockEntityProvider(Ticket);
 
     const module: TestingModule = await Test.createTestingModule({
-      imports: [Web3Module, SolanabeachModule],
+      imports: [
+        Web3Module,
+        SolanabeachModule,
+        CacheModule.register(),
+        ScheduleModule.forRoot(),
+      ],
       providers: [
         TicketsService,
         ProjectsService,
@@ -123,6 +130,10 @@ describe('ProjectsService', () => {
 
   describe('getContrib', () => {
     it('should get round contribution', async () => {
+      jest
+        .spyOn(projectRoundProvider.repo, 'findOne')
+        .mockImplementation(() => Promise.resolve(new ProjectRound()));
+
       jest
         .spyOn(projectContribProvider.repo, 'createQueryBuilder')
         .mockImplementation(() => {
@@ -215,6 +226,10 @@ describe('ProjectsService', () => {
       jest
         .spyOn(projectRoundProvider.repo, 'update')
         .mockResolvedValue({} as any);
+
+      jest
+        .spyOn(projectRoundProvider.repo, 'query')
+        .mockImplementation(() => Promise.resolve([{ amount: 0 }]));
 
       const result = await projectsService.fetchContributions(ROUND);
 
