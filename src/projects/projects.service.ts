@@ -517,7 +517,7 @@ export class ProjectsService implements OnModuleInit {
     });
 
     if (!participant) {
-      throw new NotFoundException();
+      return false;
     }
 
     return true;

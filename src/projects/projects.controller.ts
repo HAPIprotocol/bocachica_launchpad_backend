@@ -155,7 +155,6 @@ export class ProjectsController {
     description: 'Whether a public key is whitelisted in the round',
     type: IsWhitelistedResponseDto,
   })
-  @ApiNotFoundResponse({ status: 404, description: 'Not found' })
   @ApiQuery({
     name: 'publicKey',
     type: String,
