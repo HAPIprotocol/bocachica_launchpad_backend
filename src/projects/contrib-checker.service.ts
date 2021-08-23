@@ -57,11 +57,11 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
           throw new Error(`Round not found: ${roundId}`);
         }
 
+        await this.projectsService.fetchContributions(round);
+
         if (txHash) {
           await this.projectsService.fetchContribution(round, txHash);
         }
-
-        await this.projectsService.fetchContributions(round);
       });
 
       queue.on('ready', () => {
