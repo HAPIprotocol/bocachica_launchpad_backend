@@ -192,10 +192,13 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
     await this.queue.close();
   }
 
-  async updateRoundContribution(roundId: number): Promise<string> {
+  async updateRoundContribution(
+    roundId: number,
+    txHash?: string,
+  ): Promise<string> {
     return new Promise(async (resolve, reject) => {
       const job = await this.queue
-        .createJob({ roundId })
+        .createJob({ roundId, txHash })
         .timeout(60000)
         .retries(3)
         .backoff('exponential', 1000)

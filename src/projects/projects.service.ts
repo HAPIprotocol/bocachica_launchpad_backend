@@ -585,7 +585,7 @@ export class ProjectsService implements OnModuleInit {
     try {
       await this.roundRepo.findOneOrFail({ id: roundId }, { cache: 60000 });
       await this.web3.getTransaction(txHash, { commitment: 'confirmed' });
-      await this.contribChecker.updateRoundContribution(roundId);
+      await this.contribChecker.updateRoundContribution(roundId, txHash);
     } catch (error) {
       this.logger.warn(
         `Failed to report contribution ${flobj({
