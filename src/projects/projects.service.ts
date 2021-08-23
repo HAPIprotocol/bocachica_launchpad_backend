@@ -9,6 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindConditions, In, Not, Raw, Repository } from 'typeorm';
 import { ParsedAccountData, PublicKey } from '@solana/web3.js';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import * as BN from 'bn.js';
 import { CronJob } from 'cron';
@@ -31,6 +32,8 @@ import { ContribCheckerService } from './contrib-checker.service';
 import { collectedAmountSql } from './projects.sql';
 import { getProcessType, ProcessType } from '../cluster';
 import { ProjectParticipant } from './entities/project-participant.entity';
+import { TransferInstruction } from '../solanabeach/interfaces';
+import { retryUntilSuccess } from '../common/retry';
 
 @Injectable()
 export class ProjectsService implements OnModuleInit {
@@ -144,6 +147,146 @@ export class ProjectsService implements OnModuleInit {
       where: { id: roundId },
       relations: ['project'],
     });
+  }
+
+  async fetchContribution(
+    round: ProjectRound,
+    txHash: string,
+  ): Promise<{ total: string } | undefined> {
+    const tokenAddress = await round.tokenAddress();
+
+    this.logger.verbose(
+      `Checking round contribution ${flobj({
+        roundId: round.id,
+        address: round.address,
+        tokenAddress: tokenAddress.toString(),
+        txHash,
+      })}`,
+    );
+
+    const contribution = await this.contribRepo.findOne({
+      where: { roundId: round.id, txHash },
+    });
+
+    if (contribution) {
+      this.logger.verbose(
+        `Contribution already exists ${flobj({
+          roundId: round.id,
+          txHash,
+        })}`,
+      );
+
+      return { total: contribution.amount };
+    }
+
+    const transaction = await retryUntilSuccess(
+      () => {
+        this.logger.debug(`Fetching transaction ${flobj({ txHash })}`);
+        return this.solanabeach.getTransaction(txHash);
+      },
+      {
+        onErrorRetry: (error) => {
+          this.logger.debug(
+            `Couldn't fetch transaction ${flobj({
+              txHash,
+              error: error.message,
+            })}`,
+          );
+          return true;
+        },
+      },
+    );
+
+    if (!transaction.valid) {
+      this.logger.warn(
+        `Transaction is not valid ${flobj({ roundId: round.id, txHash })}`,
+      );
+      return;
+    }
+
+    const transfers = transaction.instructions
+      .filter((i) => i.programId.address === TOKEN_PROGRAM_ID.toString())
+      .filter((i) => i.parsed['Transfer'])
+      .map((i) => (i.parsed as TransferInstruction).Transfer)
+      .filter(
+        (transfer) =>
+          transfer.destination.address === tokenAddress.toString() &&
+          transfer.mint.address === round.smartcontractAddress,
+      );
+
+    if (transfers.length) {
+      this.logger.verbose(
+        `Found transfers ${flobj({
+          roundId: round.id,
+          count: transfers.length,
+          txHash,
+        })}`,
+      );
+    }
+
+    let total = new BN(0);
+
+    for (const transfer of transfers) {
+      const tokenAccount = transfer.source.address;
+      let publicKey: string;
+
+      if (transfer.mint.address != round.smartcontractAddress) {
+        this.logger.debug(
+          `Irrelevant mint address ${flobj({
+            roundId: round.id,
+            mint: transfer.mint.address,
+            address: round.smartcontractAddress,
+            tokenAccount,
+            txHash,
+          })}`,
+        );
+        continue;
+      }
+
+      try {
+        const data = await this.web3.getParsedAccountInfo(
+          new PublicKey(tokenAccount),
+        );
+
+        publicKey = (data.value.data as ParsedAccountData).parsed.info.owner;
+      } catch (_) {
+        this.logger.error(
+          `Couldn't fetch token account data ${flobj({
+            tokenAccount,
+            txHash,
+            amount: transfer.amount,
+          })}`,
+        );
+      }
+
+      const logobj = {
+        tokenAccount,
+        publicKey,
+        txHash,
+        amount: transfer.amount,
+      };
+
+      const existing = await this.contribRepo.findOne({
+        where: { publicKey, txHash },
+      });
+      if (existing) {
+        this.logger.warn(`Duplicate contrib ${flobj(logobj)}`);
+        continue;
+      }
+
+      const contrib = new ProjectContribution();
+      contrib.roundId = round.id;
+      contrib.publicKey = publicKey;
+      contrib.blocknumber = transaction.blockNumber;
+      contrib.timestamp = new Date(transaction.blocktime.absolute * 1000);
+      contrib.amount = transfer.amount.toString();
+      contrib.txHash = txHash;
+      await this.contribRepo.save(contrib);
+      this.logger.log(`Saved contrib ${flobj(logobj)}`);
+      total = total.add(new BN(contrib.amount));
+    }
+
+    return { total: total.toString() };
   }
 
   async fetchContributions(round: ProjectRound): Promise<{ total: string }> {

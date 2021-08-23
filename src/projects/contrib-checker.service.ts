@@ -18,6 +18,7 @@ import { getProcessType, ProcessType } from '../cluster';
 
 export interface ContribCheckerJob {
   roundId: number;
+  txHash?: string;
 }
 
 const CONTRIB_CHECKER_JOB_CONCURRENCY = 10;
@@ -48,12 +49,16 @@ export class ContribCheckerService implements OnModuleInit, OnModuleDestroy {
       });
 
       queue.process(CONTRIB_CHECKER_JOB_CONCURRENCY, async (job) => {
-        const { roundId } = job.data;
+        const { roundId, txHash } = job.data;
 
         const round = await this.projectsService.getRoundInfo(roundId);
 
         if (!round) {
           throw new Error(`Round not found: ${roundId}`);
+        }
+
+        if (txHash) {
+          await this.projectsService.fetchContribution(round, txHash);
         }
 
         await this.projectsService.fetchContributions(round);

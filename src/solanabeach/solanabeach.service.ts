@@ -6,6 +6,7 @@ import {
   StakeAccount,
   AccountTokenTransfer,
   StakeAccountReward,
+  Transaction,
 } from './interfaces';
 
 /* 
@@ -28,7 +29,7 @@ export class SolanabeachService {
 
   private async _get<T>(
     url: string,
-    params: Record<string, unknown>,
+    params?: Record<string, unknown>,
   ): Promise<T> {
     let result: AxiosResponse;
     try {
@@ -75,5 +76,9 @@ export class SolanabeachService {
       `/account/${pubkey}/token-transfers`,
       { limit, offset, cursor, inner },
     );
+  }
+
+  async getTransaction(txHash: string): Promise<Transaction> {
+    return this._get<Transaction>(`/transaction/${txHash}`);
   }
 }

@@ -17,6 +17,7 @@ import { Ticket } from '../tickets/entities/ticket.entity';
 import { TicketsService } from '../tickets/tickets.service';
 import { ContribCheckerService } from './contrib-checker.service';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ProjectParticipant } from './entities/project-participant.entity';
 
 jest.mock('../solanabeach/solanabeach.service');
 jest.mock('./contrib-checker.service');
@@ -28,6 +29,7 @@ describe('ProjectsService', () => {
   let projectContribProvider: IMockEntityProvider<ProjectContribution>;
   let projectRoundProvider: IMockEntityProvider<ProjectRound>;
   let projectPartnerProvider: IMockEntityProvider<ProjectPartner>;
+  let projectParticipantProvider: IMockEntityProvider<ProjectParticipant>;
   let ticketProvider: IMockEntityProvider<Ticket>;
 
   beforeEach(async () => {
@@ -37,6 +39,7 @@ describe('ProjectsService', () => {
     projectContribProvider = mockEntityProvider(ProjectContribution);
     projectRoundProvider = mockEntityProvider(ProjectRound);
     projectPartnerProvider = mockEntityProvider(ProjectPartner);
+    projectParticipantProvider = mockEntityProvider(ProjectParticipant);
     ticketProvider = mockEntityProvider(Ticket);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -54,6 +57,7 @@ describe('ProjectsService', () => {
         projectContribProvider,
         projectRoundProvider,
         projectPartnerProvider,
+        projectParticipantProvider,
         ticketProvider,
       ],
     }).compile();

@@ -1,13 +1,22 @@
+export interface Address {
+  address: string;
+  name?: string;
+  logo?: string;
+  ticker?: string;
+  cmcId?: string;
+  meta?: unknown;
+}
+
 export interface StakeAccount {
-  pubkey: { address: string };
+  pubkey: Address;
   lamports: number;
   data: {
     state: number;
     meta: {
       rent_exempt_reserve: number;
       authorized: {
-        staker: { address: string };
-        withdrawer: { address: string };
+        staker: Address;
+        withdrawer: Address;
       };
     };
     lockup: {
@@ -17,7 +26,7 @@ export interface StakeAccount {
     };
     stake: {
       delegation: {
-        voter_pubkey: { address: string };
+        voter_pubkey: Address;
         stake: number;
         activation_epoch: number;
         deactivation_epoch: number;
@@ -43,14 +52,6 @@ export interface StakeAccountReward {
   apr: number;
 }
 
-export interface Address {
-  address: string;
-  name?: string;
-  logo?: string;
-  ticker?: string;
-  cmcId?: string;
-}
-
 export interface Timestamp {
   absolute: number;
   relative: number;
@@ -68,4 +69,80 @@ export interface AccountTokenTransfer {
   txindex: number;
   timestamp: Timestamp;
   decimals: number;
+}
+
+export interface TransferInstruction {
+  Transfer: {
+    amount: number;
+    source: Address;
+    destination: Address;
+    owner: Address;
+    signers: Address[];
+    writable: Address[];
+    mint: Address;
+    decimals: number;
+  };
+}
+
+export interface Transaction {
+  transactionHash: string;
+  blockNumber: number;
+  index: number;
+  accounts: Array<{ account: { address: string }; signer: boolean }>;
+  header: {
+    numRequiredSignatures: number;
+    numReadonlySignedAccounts: number;
+    numReadonlyUnsignedAccounts: number;
+  };
+  instructions: [
+    {
+      parsed: TransferInstruction | unknown;
+      programId: {
+        name: string;
+        address: string;
+      };
+    },
+  ];
+  recentBlockhash: string;
+  signatures: string[];
+  meta: {
+    err: unknown;
+    fee: number;
+    status: unknown;
+    rewards: unknown[];
+    logMessages: string[];
+    preBalances: number[];
+    postBalances: number[];
+    preTokenBalances: Array<{
+      mint: Address;
+      accountIndex: number;
+      uiTokenAmount: {
+        amount: string;
+        decimals: number;
+        uiAmount: number;
+        uiAmountString: string;
+      };
+    }>;
+    postTokenBalances: Array<{
+      mint: Address;
+      accountIndex: number;
+      uiTokenAmount: {
+        amount: string;
+        decimals: number;
+        uiAmount: number;
+        uiAmountString: string;
+      };
+    }>;
+  };
+  valid: boolean;
+  blocktime: Timestamp;
+  mostImportantInstruction: {
+    name: string;
+    weight: number;
+    index: number;
+  };
+  smart: Array<{
+    type: string;
+    value: unknown;
+  }>;
 }
