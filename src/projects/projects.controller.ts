@@ -63,7 +63,7 @@ export class ProjectsController {
     }
   }
 
-  @Get()
+  // @Get()
   @ApiOkResponse({
     description: 'Return list of projects',
     type: FindAllProjectsResultDto,
@@ -182,7 +182,7 @@ export class ProjectsController {
     return { item };
   }
 
-  @Get(':id')
+  // @Get(':id')
   @ApiOkResponse({
     description: 'Return record data',
     type: FindOneProjectResultDto,

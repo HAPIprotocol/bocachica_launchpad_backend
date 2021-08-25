@@ -524,7 +524,7 @@ export class ProjectsService implements OnModuleInit {
       }
     }
 
-    if (filters.status) {
+    if (filters.status && filters.status != ProjectRoundStatus.Hidden) {
       where.status = filters.status;
     }
 
@@ -543,6 +543,7 @@ export class ProjectsService implements OnModuleInit {
         .andWhere(
           `project.title LIKE '%${filters.query}%' OR project.ticker LIKE '%${filters.query}%' OR r.name LIKE '%${filters.query}%' OR r.currency LIKE '%${filters.query}'`,
         )
+        .andWhere(`status != '${ProjectRoundStatus.Hidden}'`)
         .skip(filters.skip > 0 ? filters.skip : 0)
         .take(filters.take);
 
@@ -550,7 +551,7 @@ export class ProjectsService implements OnModuleInit {
     } else {
       [list, total] = await this.roundRepo.findAndCount({
         order: { startDate: 'DESC' },
-        where,
+        where: [where, `status != '${ProjectRoundStatus.Hidden}'`],
         skip: filters.skip > 0 ? filters.skip : 0,
         take: filters.take,
         relations: ['project'],
@@ -562,7 +563,7 @@ export class ProjectsService implements OnModuleInit {
 
   async findOneRound(id: number) {
     const round = await this.roundRepo.findOne({
-      where: { id },
+      where: { id, status: Not(ProjectRoundStatus.Hidden) },
       relations: ['project', 'project.partners'],
     });
 
@@ -584,8 +585,12 @@ export class ProjectsService implements OnModuleInit {
   async reportContribution(txHash: string, roundId: number): Promise<void> {
     try {
       await this.roundRepo.findOneOrFail({ id: roundId }, { cache: 60000 });
-      await this.web3.getTransaction(txHash, { commitment: 'confirmed' });
-      await this.contribChecker.updateRoundContribution(roundId, txHash);
+      const tx = await this.web3.getTransaction(txHash, {
+        commitment: 'confirmed',
+      });
+      if (tx) {
+        await this.contribChecker.updateRoundContribution(roundId, txHash);
+      }
     } catch (error) {
       this.logger.warn(
         `Failed to report contribution ${flobj({

@@ -22,6 +22,7 @@ export enum ProjectRoundStatus {
   Pending = 'pending',
   Active = 'active',
   Finished = 'finished',
+  Hidden = 'hidden',
 }
 
 export enum ProjectRoundAccessType {
