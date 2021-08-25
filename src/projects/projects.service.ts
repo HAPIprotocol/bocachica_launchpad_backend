@@ -526,6 +526,8 @@ export class ProjectsService implements OnModuleInit {
 
     if (filters.status && filters.status != ProjectRoundStatus.Hidden) {
       where.status = filters.status;
+    } else {
+      where.status = Not(ProjectRoundStatus.Hidden);
     }
 
     if (filters.accessType) {
@@ -543,7 +545,6 @@ export class ProjectsService implements OnModuleInit {
         .andWhere(
           `project.title LIKE '%${filters.query}%' OR project.ticker LIKE '%${filters.query}%' OR r.name LIKE '%${filters.query}%' OR r.currency LIKE '%${filters.query}'`,
         )
-        .andWhere(`status != '${ProjectRoundStatus.Hidden}'`)
         .skip(filters.skip > 0 ? filters.skip : 0)
         .take(filters.take);
 
@@ -551,7 +552,7 @@ export class ProjectsService implements OnModuleInit {
     } else {
       [list, total] = await this.roundRepo.findAndCount({
         order: { startDate: 'DESC' },
-        where: [where, `status != '${ProjectRoundStatus.Hidden}'`],
+        where,
         skip: filters.skip > 0 ? filters.skip : 0,
         take: filters.take,
         relations: ['project'],
