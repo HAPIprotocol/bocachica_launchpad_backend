@@ -102,7 +102,7 @@ async function webBootstrap() {
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('apidoc', app, document);
 
   await app.listen(APP_PORT);
 }
