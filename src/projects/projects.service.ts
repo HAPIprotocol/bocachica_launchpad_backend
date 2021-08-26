@@ -543,7 +543,7 @@ export class ProjectsService implements OnModuleInit {
         .leftJoinAndSelect('r.project', 'project')
         .where(where)
         .andWhere(
-          `project.title LIKE '%${filters.query}%' OR project.ticker LIKE '%${filters.query}%' OR r.name LIKE '%${filters.query}%' OR r.currency LIKE '%${filters.query}'`,
+          `(project.title LIKE '%${filters.query}%' OR project.ticker LIKE '%${filters.query}%' OR r.name LIKE '%${filters.query}%' OR r.currency LIKE '%${filters.query}')`,
         )
         .skip(filters.skip > 0 ? filters.skip : 0)
         .take(filters.take);
