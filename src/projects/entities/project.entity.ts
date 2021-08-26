@@ -71,6 +71,18 @@ export class Project {
   })
   description: string;
 
+  @Column({ nullable: true })
+  @ApiPropertyOptional({ example: 'https://t.me/hapiHF' })
+  telegramUrl: string;
+
+  @Column({ nullable: true })
+  @ApiPropertyOptional({ example: 'https://twitter.com/i_am_hapi_one' })
+  twitterUrl: string;
+
+  @Column({ nullable: true })
+  @ApiPropertyOptional({ example: 'https://medium.com/i-am-hapi' })
+  mediumUrl: string;
+
   @OneToMany(() => ProjectPartner, (partner) => partner.project)
   @JoinColumn({ name: 'projectId' })
   partners: ProjectPartner[];
