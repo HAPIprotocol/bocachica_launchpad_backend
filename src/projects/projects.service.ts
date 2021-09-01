@@ -300,7 +300,10 @@ export class ProjectsService implements OnModuleInit {
     return { total: total.toString() };
   }
 
-  async fetchContributions(round: ProjectRound): Promise<{ total: string }> {
+  async fetchContributions(
+    round: ProjectRound,
+    force = false,
+  ): Promise<{ total: string }> {
     const tokenAddress = await round.tokenAddress();
 
     this.logger.verbose(
@@ -382,6 +385,7 @@ export class ProjectsService implements OnModuleInit {
 
       // Historic data?
       if (
+        !force &&
         transfers[0] &&
         latestContrib &&
         transfers[0].blocknumber <= latestContrib.blocknumber
