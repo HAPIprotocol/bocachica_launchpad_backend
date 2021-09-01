@@ -58,13 +58,24 @@ export class ProjectsService implements OnModuleInit {
   onModuleInit() {
     if (getProcessType() === ProcessType.Worker) {
       {
-        this.logger.log(`Starting cron job triggerRoundsByTime`);
+        this.logger.log(`Starting cron job triggerActiveRoundsByTime`);
 
         const job = new CronJob(CronExpression.EVERY_10_SECONDS, async () => {
-          await this.triggerRoundsByTime();
+          await this.triggerActiveRoundsByTime();
         });
 
-        this.schedulerRegistry.addCronJob('triggerRoundsByTime', job);
+        this.schedulerRegistry.addCronJob('triggerActiveRoundsByTime', job);
+        job.start();
+      }
+
+      {
+        this.logger.log(`Starting cron job triggerPendingRoundsByTime`);
+
+        const job = new CronJob(CronExpression.EVERY_10_SECONDS, async () => {
+          await this.triggerPendingRoundsByTime();
+        });
+
+        this.schedulerRegistry.addCronJob('triggerPendingRoundsByTime', job);
         job.start();
       }
 
@@ -637,7 +648,7 @@ export class ProjectsService implements OnModuleInit {
     }
   }
 
-  async triggerRoundsByTime() {
+  async triggerActiveRoundsByTime() {
     const rounds = await this.roundRepo.find({
       where: {
         status: ProjectRoundStatus.Active,
@@ -655,6 +666,27 @@ export class ProjectsService implements OnModuleInit {
         })}`,
       );
       round.status = ProjectRoundStatus.Finished;
+      await this.roundRepo.save(round);
+    }
+  }
+
+  async triggerPendingRoundsByTime() {
+    const rounds = await this.roundRepo.find({
+      where: {
+        status: ProjectRoundStatus.Pending,
+        startDate: Raw((col) => `${col} < NOW()`),
+      },
+    });
+
+    for (const round of rounds) {
+      this.logger.log(
+        `Round has reached the start date ${flobj({
+          roundId: round.id,
+          targetAmount: round.targetAmount,
+          startDate: round.startDate.toString(),
+        })}`,
+      );
+      round.status = ProjectRoundStatus.Active;
       await this.roundRepo.save(round);
     }
   }
