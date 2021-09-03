@@ -93,3 +93,9 @@ export const SOLANABEACH_API_KEY = env
   .get('SOLANABEACH_API_KEY')
   .required()
   .asString();
+
+export const ROUND_PENDING_CONCURRENCY = env
+  .get('ROUND_PENDING_CONCURRENCY')
+  .required()
+  .default(10)
+  .asIntPositive();

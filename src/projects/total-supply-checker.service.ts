@@ -18,7 +18,7 @@ import {
   TOTAL_SUPPLY_CHECKER_JOB_CONCURRENCY,
 } from '../config';
 import { ProjectsService } from './projects.service';
-import { flobj } from 'src/common/string';
+import { flobj } from '../common/string';
 
 export interface TotalSupplyCheckerJob {
   projectId: number;

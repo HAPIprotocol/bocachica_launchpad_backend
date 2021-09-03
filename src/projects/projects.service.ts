@@ -14,7 +14,7 @@ import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import * as BN from 'bn.js';
 import { CronJob } from 'cron';
 
-import { DEFAULT_ITEMS_PER_PAGE } from '../config';
+import { DEFAULT_ITEMS_PER_PAGE, ROUND_PENDING_CONCURRENCY } from '../config';
 import {
   ProjectContribution,
   ProjectContributionStatus,
@@ -41,6 +41,7 @@ import {
   RetryUntilSuccessStrategy,
   wait,
 } from '../common/retry';
+import { AccountsService } from '../accounts/accounts.service';
 
 @Injectable()
 export class ProjectsService implements OnModuleInit {
@@ -49,10 +50,10 @@ export class ProjectsService implements OnModuleInit {
   constructor(
     @InjectRepository(Project) private projectRepo: Repository<Project>,
     @InjectRepository(ProjectContribution)
-    private contribRepo: Repository<ProjectContribution>,
+    private readonly contribRepo: Repository<ProjectContribution>,
     @InjectRepository(ProjectRound) private roundRepo: Repository<ProjectRound>,
     @InjectRepository(ProjectParticipant)
-    private participantRepo: Repository<ProjectParticipant>,
+    private readonly participantRepo: Repository<ProjectParticipant>,
     private readonly solanabeach: SolanabeachService,
     private readonly ticketsService: TicketsService,
     @Inject(WEB3_CONNECTION)
@@ -60,6 +61,7 @@ export class ProjectsService implements OnModuleInit {
     @Inject(forwardRef(() => ContribCheckerService))
     private readonly contribChecker: ContribCheckerService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly accountsService: AccountsService,
   ) {}
 
   onModuleInit() {
@@ -768,5 +770,96 @@ export class ProjectsService implements OnModuleInit {
     }
 
     return true;
+  }
+
+  async canContribute(roundId: number, publicKey: string): Promise<boolean> {
+    try {
+      const round = await this.roundRepo.findOne(
+        { id: roundId },
+        { cache: 60000 },
+      );
+
+      // Round is not active
+      if (round.status !== ProjectRoundStatus.Active) {
+        return false;
+      }
+
+      const collectedAmount = new BN(round.collectedAmount);
+      const targetAmount = new BN(round.targetAmount);
+
+      // Target amount is already collected
+      if (collectedAmount.gte(targetAmount)) {
+        return false;
+      }
+
+      // Not on a whitelist for the private round
+      if (round.accessType === ProjectRoundAccessType.Private) {
+        const isWhitelisted = await this.isWhitelisted(roundId, publicKey);
+        if (!isWhitelisted) {
+          return false;
+        }
+      }
+
+      // Too many people are contributing at once
+      const pendingCount = await this.contribRepo.count({
+        where: {
+          roundId,
+          status: ProjectContributionStatus.Pending,
+        },
+        cache: 1000,
+      });
+      if (pendingCount > ROUND_PENDING_CONCURRENCY) {
+        return false;
+      }
+
+      // Pending contribution already exists
+      const contrib = await this.contribRepo.findOne(
+        { roundId, publicKey },
+        { cache: 1000 },
+      );
+      if (contrib && contrib.status === ProjectContributionStatus.Pending) {
+        return false;
+      } else if (contrib) {
+        const { amount } = await this.contribRepo
+          .createQueryBuilder('c')
+          .select('SUM(c.amount)', 'amount')
+          .where({
+            roundId,
+            publicKey,
+            status: Not(ProjectContributionStatus.Failure),
+          })
+          .groupBy('c.publicKey')
+          .cache(1000)
+          .getRawOne();
+
+        const contributedAmount = new BN(amount);
+        let maxAmount = new BN(round.maxAmount);
+
+        if (round.solPowerCheck) {
+          const solPowerAmount = new BN(
+            await this.accountsService.getAccountSolPower(publicKey),
+          );
+
+          maxAmount = maxAmount
+            .muln(round.solPowerRate || 1)
+            .mul(solPowerAmount);
+        }
+
+        if (contributedAmount.gte(maxAmount)) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to check can contribute ${flobj({
+          roundId,
+          publicKey,
+          error: error.message,
+        })}`,
+      );
+      return false;
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import * as request from 'supertest';
 
 import * as config from '../src/config';
@@ -34,7 +35,7 @@ describe('Accounts', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AccountsModule, pgContainer.module()],
+      imports: [AccountsModule, ScheduleModule.forRoot(), pgContainer.module()],
     }).compile();
 
     app = moduleFixture.createNestApplication();

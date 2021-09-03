@@ -11,7 +11,7 @@ import { Validator } from './entities/validator.entity';
 import { StakeReward } from './entities/stake-rewards.entity';
 import { WEB3_CONNECTION, Web3Connection } from '../web3/web3.module';
 import { SolanabeachService } from '../solanabeach/solanabeach.service';
-import { getProcessType, ProcessType } from 'src/cluster';
+import { getProcessType, ProcessType } from '../cluster';
 
 const UPDATE_ACCOUNTS_PER_RUN = 10;
 
@@ -335,5 +335,15 @@ export class AccountsService {
     return this.userAccountRepo.findOneOrFail({ where: { id } }).catch(() => {
       throw new NotFoundException();
     });
+  }
+
+  async getAccountSolPower(publicKey: string): Promise<string | undefined> {
+    const account = await this.userAccountRepo.findOne({ publicKey });
+
+    if (account) {
+      return account.solPowerAmount;
+    }
+
+    return;
   }
 }

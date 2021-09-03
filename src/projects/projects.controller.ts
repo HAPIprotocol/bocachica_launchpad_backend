@@ -19,6 +19,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { isValidPublicKey } from '../common/crypto';
+import { CanContributeResponseDto } from './dto/can-contribute.dto';
 import {
   ContributeToProjectDto,
   ContributeToProjectResponseDto,
@@ -38,6 +40,7 @@ import { ProjectsService } from './projects.service';
 export const ROUNDS_CACHE_TTL = 5;
 export const ROUND_CONTRIBUTION_TTL = 1;
 export const WHITELIST_CACHE_TTL = 60;
+export const CAN_CONTRIBUTE_CACHE_TTL = 1;
 
 @UseInterceptors(CacheInterceptor)
 @Controller('projects')
@@ -169,11 +172,44 @@ export class ProjectsController {
     @Param('id') roundId: string,
     @Query('publicKey') publicKey?: string,
   ): Promise<IsWhitelistedResponseDto> {
+    if (!isValidPublicKey(publicKey)) {
+      return { isWhitelisted: false };
+    }
+
     const isWhitelisted = await this.projectsService.isWhitelisted(
       Number(roundId),
       publicKey,
     );
+
     return { isWhitelisted };
+  }
+
+  @Get('round/:id/canContribute')
+  @CacheTTL(CAN_CONTRIBUTE_CACHE_TTL)
+  @ApiOkResponse({
+    description:
+      'Whether a public key can contribute to the round at the moment',
+    type: CanContributeResponseDto,
+  })
+  @ApiQuery({
+    name: 'publicKey',
+    type: String,
+    required: true,
+  })
+  async canContribute(
+    @Param('id') roundId: string,
+    @Query('publicKey') publicKey: string,
+  ): Promise<CanContributeResponseDto> {
+    if (!isValidPublicKey(publicKey)) {
+      return { canContribute: false };
+    }
+
+    const canContribute = await this.projectsService.canContribute(
+      Number(roundId),
+      publicKey,
+    );
+
+    return { canContribute };
   }
 
   @Get('round/:id')

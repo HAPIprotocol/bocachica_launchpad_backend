@@ -13,6 +13,7 @@ import { ContribCheckerService } from './contrib-checker.service';
 import { TicketsModule } from '../tickets/tickets.module';
 import { TotalSupplyCheckerService } from './total-supply-checker.service';
 import { ProjectParticipant } from './entities/project-participant.entity';
+import { AccountsModule } from '../accounts/accounts.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ProjectParticipant } from './entities/project-participant.entity';
     Web3Module,
     SolanabeachModule,
     TicketsModule,
+    AccountsModule,
   ],
   controllers: [ProjectsController],
   providers: [
