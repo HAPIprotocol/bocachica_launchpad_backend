@@ -15,7 +15,10 @@ import * as BN from 'bn.js';
 import { CronJob } from 'cron';
 
 import { DEFAULT_ITEMS_PER_PAGE } from '../config';
-import { ProjectContribution } from './entities/project-contribution.entity';
+import {
+  ProjectContribution,
+  ProjectContributionStatus,
+} from './entities/project-contribution.entity';
 import { ProjectWithCurrentRound } from './dto/find-all-projects.dto';
 import {
   ProjectRound,
@@ -33,7 +36,11 @@ import { collectedAmountSql } from './projects.sql';
 import { getProcessType, ProcessType } from '../cluster';
 import { ProjectParticipant } from './entities/project-participant.entity';
 import { TransferInstruction } from '../solanabeach/interfaces';
-import { retryUntilSuccess, wait } from '../common/retry';
+import {
+  retryUntilSuccess,
+  RetryUntilSuccessStrategy,
+  wait,
+} from '../common/retry';
 
 @Injectable()
 export class ProjectsService implements OnModuleInit {
@@ -175,19 +182,22 @@ export class ProjectsService implements OnModuleInit {
       })}`,
     );
 
-    const contribution = await this.contribRepo.findOne({
+    const existingContrib = await this.contribRepo.findOne({
       where: { roundId: round.id, txHash },
     });
 
-    if (contribution) {
+    if (
+      existingContrib &&
+      existingContrib.status !== ProjectContributionStatus.Pending
+    ) {
       this.logger.verbose(
-        `Contribution already exists ${flobj({
+        `Contribution already finalized ${flobj({
           roundId: round.id,
           txHash,
         })}`,
       );
 
-      return { total: contribution.amount };
+      return { total: existingContrib.amount };
     }
 
     const transaction = await retryUntilSuccess(
@@ -196,6 +206,10 @@ export class ProjectsService implements OnModuleInit {
         return this.solanabeach.getTransaction(txHash);
       },
       {
+        strategy: RetryUntilSuccessStrategy.Exponential,
+        maxAttempts: 5,
+        interval: 1000,
+        timeout: 60000,
         onErrorRetry: (error) => {
           this.logger.debug(
             `Couldn't fetch transaction ${flobj({
@@ -277,24 +291,50 @@ export class ProjectsService implements OnModuleInit {
         amount: transfer.amount,
       };
 
+      const timestamp = new Date(transaction.blocktime.absolute * 1000);
+
+      const rogue = await this.contribRepo.findOne({
+        txHash,
+        publicKey: Not(publicKey),
+        status: ProjectContributionStatus.Pending,
+      });
+      if (rogue) {
+        rogue.status = ProjectContributionStatus.Failure;
+        await this.contribRepo.save(rogue);
+        this.logger.warn(
+          `Found rogue contrib ${flobj({
+            ...logobj,
+            rogueKey: rogue.publicKey,
+          })}`,
+        );
+      }
+
       const existing = await this.contribRepo.findOne({
         where: { publicKey, txHash },
       });
-      if (existing) {
-        this.logger.warn(`Duplicate contrib ${flobj(logobj)}`);
-        continue;
+      if (existing && existing.status !== ProjectContributionStatus.Pending) {
+        this.logger.warn(`Duplicate contrib ignored ${flobj(logobj)}`);
+      } else if (existing) {
+        existing.timestamp = timestamp;
+        existing.status = ProjectContributionStatus.Success;
+        existing.amount = transfer.amount.toString();
+        existing.blocknumber = transaction.blockNumber;
+        await this.contribRepo.save(existing);
+        this.logger.log(`Updated contrib ${flobj(logobj)}`);
+        total = total.add(new BN(existing.amount));
+      } else {
+        const contrib = new ProjectContribution();
+        contrib.roundId = round.id;
+        contrib.publicKey = publicKey;
+        contrib.blocknumber = transaction.blockNumber;
+        contrib.timestamp = new Date(transaction.blocktime.absolute * 1000);
+        contrib.amount = transfer.amount.toString();
+        contrib.txHash = txHash;
+        contrib.status = ProjectContributionStatus.Success;
+        await this.contribRepo.save(contrib);
+        this.logger.log(`Created contrib ${flobj(logobj)}`);
+        total = total.add(new BN(contrib.amount));
       }
-
-      const contrib = new ProjectContribution();
-      contrib.roundId = round.id;
-      contrib.publicKey = publicKey;
-      contrib.blocknumber = transaction.blockNumber;
-      contrib.timestamp = new Date(transaction.blocktime.absolute * 1000);
-      contrib.amount = transfer.amount.toString();
-      contrib.txHash = txHash;
-      await this.contribRepo.save(contrib);
-      this.logger.log(`Saved contrib ${flobj(logobj)}`);
-      total = total.add(new BN(contrib.amount));
     }
 
     return { total: total.toString() };
@@ -602,9 +642,26 @@ export class ProjectsService implements OnModuleInit {
     return this.projectRepo.find();
   }
 
-  async reportContribution(txHash: string, roundId: number): Promise<void> {
+  async reportContribution(
+    publicKey: string,
+    txHash: string,
+    roundId: number,
+    amount: string,
+  ): Promise<void> {
     try {
       await this.roundRepo.findOneOrFail({ id: roundId }, { cache: 60000 });
+
+      let contrib = await this.contribRepo.findOne({ roundId, txHash });
+      if (!contrib) {
+        contrib = new ProjectContribution();
+        contrib.roundId = roundId;
+        contrib.publicKey = publicKey;
+        contrib.amount = amount;
+        contrib.txHash = txHash;
+        contrib.status = ProjectContributionStatus.Pending;
+        await this.contribRepo.save(contrib);
+      }
+
       const tx = await this.web3.getTransaction(txHash, {
         commitment: 'confirmed',
       });
@@ -616,6 +673,7 @@ export class ProjectsService implements OnModuleInit {
         `Failed to report contribution ${flobj({
           txHash,
           roundId,
+          amount,
           error: error.toString(),
         })}`,
       );

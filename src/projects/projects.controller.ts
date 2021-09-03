@@ -53,10 +53,15 @@ export class ProjectsController {
   async contribute(
     @Body() contributeDto: ContributeToProjectDto,
   ): Promise<ContributeToProjectResponseDto> {
-    const { txHash, roundId } = contributeDto;
+    const { publicKey, txHash, roundId, amount } = contributeDto;
 
     try {
-      await this.projectsService.reportContribution(txHash, roundId);
+      await this.projectsService.reportContribution(
+        publicKey,
+        txHash,
+        roundId,
+        amount,
+      );
       return { acknowledged: true };
     } catch (_) {
       return { acknowledged: false };

@@ -2,11 +2,18 @@ const DEFAULT_RETRY_INTERVAL = 1000;
 const DEFAULT_RETRY_TIMEOUT = 10000;
 const DEFAULT_MAX_ATTEMPTS = 10;
 
+export enum RetryUntilSuccessStrategy {
+  Fixed,
+  Linear,
+  Exponential,
+}
+
 export interface RetryUntilSuccessOptions {
   interval?: number;
   timeout?: number;
   maxAttempts?: number;
   onErrorRetry?: (err?: Error) => boolean;
+  strategy?: RetryUntilSuccessStrategy;
 }
 
 export async function wait(ms: number): Promise<void> {
@@ -39,8 +46,8 @@ export async function retryUntilSuccess<T>(
       options.timeout,
     );
 
-    let attempts = options.maxAttempts;
-    while (attempts--) {
+    let attempt = options.maxAttempts;
+    while (attempt++ <= options.maxAttempts + 1) {
       try {
         const result = await fn();
         if (result !== undefined) {
@@ -54,7 +61,15 @@ export async function retryUntilSuccess<T>(
         }
       }
 
-      await wait(options.interval);
+      let interval: number;
+      if (RetryUntilSuccessStrategy.Linear) {
+        interval = attempt * options.interval;
+      } else if (RetryUntilSuccessStrategy.Exponential) {
+        interval = options.interval * 2 ** attempt;
+      } else {
+        interval = options.interval;
+      }
+      await wait(interval);
     }
 
     clearTimeout(timer);

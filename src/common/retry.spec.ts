@@ -1,12 +1,32 @@
 import { clearTimeout } from 'timers';
-import { retryUntilSuccess } from './retry';
+import { retryUntilSuccess, RetryUntilSuccessStrategy } from './retry';
 
 describe('retryUntilSuccess', () => {
-  it('should work', async () => {
+  it('should work with default settings', async () => {
     const fn = () =>
       new Promise((resolve) => setTimeout(() => resolve(true), 10));
 
     await expect(retryUntilSuccess(fn)).resolves.toBe(true);
+  });
+
+  it('should work with fixed strategy', async () => {
+    const fn = () =>
+      new Promise((resolve) => setTimeout(() => resolve(true), 10));
+
+    await expect(
+      retryUntilSuccess(fn, { strategy: RetryUntilSuccessStrategy.Fixed }),
+    ).resolves.toBe(true);
+  });
+
+  it('should work with exponential strategy', async () => {
+    const fn = () =>
+      new Promise((resolve) => setTimeout(() => resolve(true), 10));
+
+    await expect(
+      retryUntilSuccess(fn, {
+        strategy: RetryUntilSuccessStrategy.Exponential,
+      }),
+    ).resolves.toBe(true);
   });
 
   it('should exhaust attempts', async () => {
