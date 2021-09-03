@@ -33,7 +33,7 @@ import { collectedAmountSql } from './projects.sql';
 import { getProcessType, ProcessType } from '../cluster';
 import { ProjectParticipant } from './entities/project-participant.entity';
 import { TransferInstruction } from '../solanabeach/interfaces';
-import { retryUntilSuccess } from '../common/retry';
+import { retryUntilSuccess, wait } from '../common/retry';
 
 @Injectable()
 export class ProjectsService implements OnModuleInit {
@@ -485,6 +485,10 @@ export class ProjectsService implements OnModuleInit {
           })}`,
         );
         break;
+      }
+
+      if (force) {
+        await wait(5000);
       }
 
       offset += limit;
